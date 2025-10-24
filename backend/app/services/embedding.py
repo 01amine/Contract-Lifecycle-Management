@@ -7,6 +7,7 @@ from qdrant_client.models import PointStruct
 from pydantic import BaseModel
 from app.dto.policy import ClauseResponse
 from app.models.policy import Template
+from qdrant_client.models import VectorParams,Distance
 
 
 # Configure Gemini
@@ -25,11 +26,25 @@ class TextDocumentProcessor:
     collection_name: Optional[str] = None
 
     @staticmethod
-    def init(qdrant_host: str, qdrant_port: int = 6333, collection_name: str = "template_clauses") -> None:
-        TextDocumentProcessor.qdrant = AsyncQdrantClient(host=qdrant_host, port=qdrant_port)
+    async def init(client: AsyncQdrantClient, collection_name: str = "template_clauses", vector_size: int = 1536) -> None:
+        TextDocumentProcessor.qdrant = client
         TextDocumentProcessor.gemini_client = genai
         TextDocumentProcessor.collection_name = collection_name
+        print("[DEBUG] TextDocumentProcessor initialized")
 
+        existing_collections = await TextDocumentProcessor.qdrant.get_collections()
+        if collection_name not in [c.name for c in existing_collections.collections]:
+            print(f"[DEBUG] Collection '{collection_name}' not found, creating...")
+            await TextDocumentProcessor.qdrant.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(
+                    size=vector_size,        # Dimensionality of your embeddings
+                    distance=Distance.COSINE # Distance metric
+                )
+            )
+            print(f"[DEBUG] Collection '{collection_name}' created")
+        else:
+            print(f"[DEBUG] Collection '{collection_name}' already exists")
     @staticmethod
     async def embed_template(template: Template) -> ResponseSchema:
         if TextDocumentProcessor.qdrant is None or TextDocumentProcessor.gemini_client is None:

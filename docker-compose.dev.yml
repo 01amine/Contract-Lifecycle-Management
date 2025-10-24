@@ -11,7 +11,6 @@ services:
     environment:
       ENV: ${ENV}
       PYTHONUNBUFFERED: "1"
-      QDRANT_URL: ${QDRANT_URL}     # 👈 Loaded from .env.dev
     command: >
       sh -c "pip install -r requirements.txt &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -83,8 +82,8 @@ services:
       - coupon_lexion_internal_net
     restart: "no"
 
-  qdrant:
-    image: qdrant/qdrant:v1.12.3
+  qdrant: 
+    image: qdrant/qdrant:v1.15.1
     container_name: coupon-qdrant-dev
     env_file:
       - .env.dev
