@@ -3,7 +3,7 @@ from beanie import PydanticObjectId
 from datetime import datetime
 from app.models.policy import Template,  PoStatus  ,Clause
 from app.dto.policy import TemplateCreateSchema, TemplateUpdateSchema
-from services.embedding import ResponseSchema, TextDocumentProcessor
+from app.services.embedding import ResponseSchema, TextDocumentProcessor
 
 
 class TemplateRepository:
