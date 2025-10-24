@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import List, Optional
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 from app.models.policy import PoStatus
 
 class ClauseSchema(BaseModel):
-    clause_id: Optional[str] = None
+    clause_id: Optional[PydanticObjectId] = None
     title: str
     text: str
     numeric_limits: Optional[dict] = None  # e.g., {"cap": 250000}
@@ -30,7 +31,7 @@ class TemplateUpdateSchema(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class TemplateReadSchema(BaseModel):
-    id: Optional[str]  # Beanie will have the _id
+    id: Optional[PydanticObjectId]  
     name: str
     country: str
     policy_type: str

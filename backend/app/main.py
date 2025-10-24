@@ -13,13 +13,14 @@ from app.exceptions import HTTPBaseException
 from app.logger import logger
 from app.api.analytics import router as analytics_router
 from app.api.policy import router as policy_router
+from app.models.policy import Template
 
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_DB]
 
 async def init_mongo():
-    await init_beanie(database=mongo_db, document_models=[ notification])
+    await init_beanie(database=mongo_db, document_models=[ notification,Template])
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
