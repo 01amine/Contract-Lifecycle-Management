@@ -5,22 +5,15 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from pymongo import AsyncMongoClient
 from beanie import init_beanie
-# from app.models.user import User
-# from app.api.user import router as user_router
 from app.minio import init_minio_client
-# from app.api.notif import router as notif_router
 from app.models.notification import notification
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-# from app.api.Coupons import router as coupons_router
 from app.exceptions import HTTPBaseException
 from app.logger import logger
-# from app.models.Coupon import Coupon
-# from app.api.brand import router as brands_router
-# from app.api.categories import router as categorie_router
 from app.api.analytics import router as analytics_router
-# from app.models.brand import Brands
-# from app.models.categories import Categorie
+from app.api.policy import router as policy_router
+
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_DB]
@@ -98,3 +91,5 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # app.include_router(brands_router)
 # app.include_router(categorie_router)
 app.include_router(analytics_router)
+app.include_router(policy_router)
+
