@@ -1,8 +1,9 @@
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
+import uuid
 
-from beanie import Document
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 class PoStatus(str, Enum):
@@ -12,11 +13,12 @@ class PoStatus(str, Enum):
     DELETED = "deleted"
 
 
+
 class Clause(BaseModel):
-    clause_id: Optional[str] = None 
+    clause_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     text: str
-    numeric_limits: Optional[Dict[str, float]] = None  #  i ahev to check this 
+    numeric_limits: Optional[Dict[str, float]] = None
     mandatory: bool = True
 
 

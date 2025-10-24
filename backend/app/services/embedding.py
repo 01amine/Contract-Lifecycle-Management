@@ -33,6 +33,7 @@ class TextDocumentProcessor:
     @staticmethod
     async def embed_template(template: Template) -> ResponseSchema:
         if TextDocumentProcessor.qdrant is None or TextDocumentProcessor.gemini_client is None:
+            print("[DEBUG] Clients not initialized")
             return ResponseSchema(success=False, message="Clients not initialized", data=None)
 
         try:
@@ -43,38 +44,50 @@ class TextDocumentProcessor:
                 text = f"{clause.title}\n{clause.text}"
                 texts.append(text)
                 metadata.append({
-                    "template_id": str(template.id),
-                    "clause_id": clause.clause_id or str(uuid.uuid4()),
-                    "title": clause.title,
-                    "text": clause.text,
-                    "country": template.country,
-                    "policy_type": template.policy_type,
-                    "version": template.version,
-                    "status": template.status.value
-                })
+                "template_id": str(template.id),
+                "clause_id": clause.clause_id or str(uuid.uuid4()),
+                "title": clause.title,
+                "text": clause.text,
+                "country": template.country,
+                "policy_type": template.policy_type,
+                "version": template.version,
+                "status": template.status.value
+            })
 
-            vectors: List[List[float]] = [
-                TextDocumentProcessor.gemini_client.embed_content(
+            print(f"[DEBUG] texts prepared: {texts}")
+            print(f"[DEBUG] metadata prepared: {metadata}")
+
+            vectors: List[List[float]] = []
+            for t in texts:
+                response = TextDocumentProcessor.gemini_client.embed_content(
                     model=settings.EMBEDDING_MODEL,
                     content=t
-                )["embedding"]
-                for t in texts
-            ]
+                )
+                print(f"[DEBUG] embedding response: {response}")
+                vectors.append(response["embedding"])
+
+            print(f"[DEBUG] vectors computed: {vectors}")
 
             points: List[PointStruct] = [
-                PointStruct(id=metadata[i]["clause_id"], vector=vectors[i], payload=metadata[i])
-                for i in range(len(vectors))
-            ]
+            PointStruct(id=metadata[i]["clause_id"], vector=vectors[i], payload=metadata[i])
+            for i in range(len(vectors))
+        ]
+
+            print(f"[DEBUG] points to upsert: {points}")
 
             await TextDocumentProcessor.qdrant.upsert(
-                collection_name=TextDocumentProcessor.collection_name,
-                points=points
-            )
+            collection_name=TextDocumentProcessor.collection_name,
+            points=points
+        )
+
+            print("[DEBUG] Qdrant upsert successful")
 
             return ResponseSchema(success=True, message="Template embedded successfully", data={"clauses_count": len(points)})
 
         except Exception as e:
+            print(f"[ERROR] Exception during embedding: {str(e)}")
             return ResponseSchema(success=False, message=f"Failed to embed template: {str(e)}", data=None)
+
 
     @staticmethod
     async def retrieve_policies(document_text: str, top_k: int = 5) -> ResponseSchema:
