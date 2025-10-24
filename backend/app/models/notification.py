@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from beanie import Document, Link
-from app.models.user import User
+# from app.models.user import User
 
 
 class notification (Document):

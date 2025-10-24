@@ -1,7 +1,7 @@
 import os
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from fastapi_mail import ConnectionConfig
+# from fastapi_mail import ConnectionConfig
 
 
 class Settings(BaseSettings):
@@ -41,13 +41,13 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=settings.MAILJET_API_KEY,
-    MAIL_PASSWORD=settings.MAILJET_SECRET_KEY,
-    MAIL_FROM=settings.MAIL_FROM_ADDRESS,
-    MAIL_PORT=587,
-    MAIL_SERVER="in-v3.mailjet.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True,
-)
+# conf = ConnectionConfig(
+#     MAIL_USERNAME=settings.MAILJET_API_KEY,
+#     MAIL_PASSWORD=settings.MAILJET_SECRET_KEY,
+#     MAIL_FROM=settings.MAIL_FROM_ADDRESS,
+#     MAIL_PORT=587,
+#     MAIL_SERVER="in-v3.mailjet.com",
+#     MAIL_STARTTLS=True,
+#     MAIL_SSL_TLS=False,
+#     USE_CREDENTIALS=True,
+# )

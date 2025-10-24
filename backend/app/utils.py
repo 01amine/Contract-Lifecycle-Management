@@ -1,8 +1,8 @@
 from fastapi import HTTPException, UploadFile, status
 from passlib.context import CryptContext
 from fastapi import BackgroundTasks
-from fastapi_mail import FastMail, MessageSchema
-from app.config import settings, conf
+# from fastapi_mail import FastMail, MessageSchema
+from app.config import settings
 
 
 class PasswordsUtils:
@@ -46,25 +46,25 @@ def check_extension(
     return file_ext
 
 
-async def send_email(email: str, code: str, background_tasks: BackgroundTasks) -> None:
-    """
-    Sends a password reset email with a 4-digit code in French.
-    """
-    # Email content in HTML format, now in French.
-    html_content = f"""
-    <p>Bonjour,</p>
-    <p>Vous avez demandé une réinitialisation de votre mot de passe. Utilisez le code ci-dessous pour le réinitialiser :</p>
-    <h3>{code}</h3>
-    <p>Ce code est valide pendant {settings.PASSWORD_RESET_TOKEN_EXPIRES // 60} minutes.</p>
-    <p>Si vous n'avez pas demandé de réinitialisation de mot de passe, vous pouvez ignorer cet e-mail en toute sécurité.</p>
-    """
+# async def send_email(email: str, code: str, background_tasks: BackgroundTasks) -> None:
+#     """
+#     Sends a password reset email with a 4-digit code in French.
+#     """
+#     # Email content in HTML format, now in French.
+#     html_content = f"""
+#     <p>Bonjour,</p>
+#     <p>Vous avez demandé une réinitialisation de votre mot de passe. Utilisez le code ci-dessous pour le réinitialiser :</p>
+#     <h3>{code}</h3>
+#     <p>Ce code est valide pendant {settings.PASSWORD_RESET_TOKEN_EXPIRES // 60} minutes.</p>
+#     <p>Si vous n'avez pas demandé de réinitialisation de mot de passe, vous pouvez ignorer cet e-mail en toute sécurité.</p>
+#     """
 
-    message = MessageSchema(
-        subject="Demande de réinitialisation de mot de passe",
-        recipients=[email],
-        body=html_content,
-        subtype="html"
-    )
+#     message = MessageSchema(
+#         subject="Demande de réinitialisation de mot de passe",
+#         recipients=[email],
+#         body=html_content,
+#         subtype="html"
+#     )
 
-    fm = FastMail(conf)
-    background_tasks.add_task(fm.send_message, message)
+#     fm = FastMail(conf)
+#     background_tasks.add_task(fm.send_message, message)
