@@ -26,7 +26,7 @@ class TextDocumentProcessor:
     collection_name: Optional[str] = None
 
     @staticmethod
-    async def init(client: AsyncQdrantClient, collection_name: str = "template_clauses", vector_size: int = 1536) -> None:
+    async def init(client: AsyncQdrantClient, collection_name: str = "template_clauses_1", vector_size: int = 1536) -> None:
         TextDocumentProcessor.qdrant = client
         TextDocumentProcessor.gemini_client = genai
         TextDocumentProcessor.collection_name = collection_name
@@ -38,7 +38,7 @@ class TextDocumentProcessor:
             await TextDocumentProcessor.qdrant.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
-                    size=vector_size,        # Dimensionality of your embeddings
+                    size=3072,        # Dimensionality of your embeddings
                     distance=Distance.COSINE # Distance metric
                 )
             )
@@ -59,15 +59,15 @@ class TextDocumentProcessor:
                 text = f"{clause.title}\n{clause.text}"
                 texts.append(text)
                 metadata.append({
-                "template_id": str(template.id),
-                "clause_id": clause.clause_id or str(uuid.uuid4()),
-                "title": clause.title,
-                "text": clause.text,
-                "country": template.country,
-                "policy_type": template.policy_type,
-                "version": template.version,
-                "status": template.status.value
-            })
+                    "template_id": str(template.id),
+                    "clause_id": clause.clause_id or str(uuid.uuid4()),
+                    "title": clause.title,
+                    "text": clause.text,
+                    "country": template.country,
+                    "policy_type": template.policy_type,
+                    "version": template.version,
+                    "status": template.status.value
+                })
 
             print(f"[DEBUG] texts prepared: {texts}")
             print(f"[DEBUG] metadata prepared: {metadata}")
@@ -83,27 +83,29 @@ class TextDocumentProcessor:
 
             print(f"[DEBUG] vectors computed: {vectors}")
 
+            # Generate valid UUIDs for Qdrant point IDs
             points: List[PointStruct] = [
-            PointStruct(id=metadata[i]["clause_id"], vector=vectors[i], payload=metadata[i])
-            for i in range(len(vectors))
-        ]
+                PointStruct(
+                    id=str(uuid.uuid4()),  # Qdrant-safe UUID
+                    vector=vectors[i],
+                    payload=metadata[i]   # original clause_id is stored in payload
+                )
+                for i in range(len(vectors))
+            ]
 
             print(f"[DEBUG] points to upsert: {points}")
 
             await TextDocumentProcessor.qdrant.upsert(
-            collection_name=TextDocumentProcessor.collection_name,
-            points=points
-        )
+                collection_name=TextDocumentProcessor.collection_name,
+                points=points
+            )
 
             print("[DEBUG] Qdrant upsert successful")
-
             return ResponseSchema(success=True, message="Template embedded successfully", data={"clauses_count": len(points)})
 
         except Exception as e:
             print(f"[ERROR] Exception during embedding: {str(e)}")
             return ResponseSchema(success=False, message=f"Failed to embed template: {str(e)}", data=None)
-
-
     @staticmethod
     async def retrieve_policies(document_text: str, top_k: int = 5) -> ResponseSchema:
         """Search Qdrant for clauses similar to the input text."""
