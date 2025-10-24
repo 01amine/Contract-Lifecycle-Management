@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from qdrant_client import AsyncQdrantClient
 from app.config import settings
 from pymongo import AsyncMongoClient
 from beanie import init_beanie
@@ -23,9 +24,13 @@ mongo_db = mongo_client[settings.MONGO_DB]
 async def init_mongo():
     await init_beanie(database=mongo_db, document_models=[ notification,Template])
 
+async def init_qdrant():
+    client =AsyncQdrantClient(url=settings.QDRANT_URL, port=6333)
+    return client
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    
+    client = await init_qdrant()
     await init_mongo()
     await init_minio_client(
         minio_host=settings.MINIO_HOST,
@@ -33,7 +38,7 @@ async def lifespan(app: FastAPI):
         minio_root_user=settings.MINIO_ROOT_USER,
         minio_root_password=settings.MINIO_ROOT_PASSWORD
     )
-    TextDocumentProcessor.init(settings.QDRANT_URL, settings.QDRANT_GRPC_PORT)
+    await TextDocumentProcessor.init(client)
     yield
 
 app = FastAPI(lifespan=lifespan)

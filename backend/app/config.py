@@ -7,8 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "*"
-    QDRANT_URL:str="http://qdrant:6333"
-    QDRANT_GRPC_PORT:int=6334
+    QDRANT_URL:str
+    QDRANT_GRPC_PORT:int
     QDRANT_STORAGE_PATH:str="/qdrant/storage"
     @property
     def allowed_origins_list(self) -> list[str]:
@@ -22,34 +22,26 @@ class Settings(BaseSettings):
     BASE_URL: str 
     notificationMessage: str = "You have a new notification."
     GOOGLE_CLIENT_ID: str = "1054139531486-amoevmmhnalq2s33lnhuk89qju7430i5.apps.googleusercontent.com"
-
-  
     TESSERACT_PATH: Optional[str] = None 
     OCR_LANGUAGE: str = "eng" 
     OCR_DPI: int = 300 
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
     ALLOWED_EXTENSIONS: list = [".pdf", ".docx", ".doc"]
     UPLOAD_TEMP_DIR: str = "/tmp/contract_uploads"
-    
     CHROMA_PERSIST_DIR: str = "./data/chroma"
     CHROMA_COLLECTION_NAME: str = "contract_templates"
-    
     LLM_PROVIDER: str = "gemini"  
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
-    
     OPENAI_MODEL: str = "gpt-4-turbo-preview"
     ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"
     GOOGLE_MODEL: str = "gemini-pro"
-    
     LLM_TEMPERATURE: float = 0.1  
     LLM_MAX_TOKENS: int = 2000
     LLM_TIMEOUT: int = 60  
-    
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION: int = 384
-    
     MONGO_URI: str = Field(default=...)
     MONGO_DB: str = Field(default=...)
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -64,7 +56,6 @@ class Settings(BaseSettings):
     ZR_EXPRESS_KEY: str
     GOOGLE_EMBEDDING_API_KEY:str
     EMBEDDING_MODEL:str="gemini-embedding-001"
-
     model_config = SettingsConfigDict(
         case_sensitive=True,
         extra="allow",  
