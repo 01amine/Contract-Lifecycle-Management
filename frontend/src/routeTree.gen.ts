@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as appSettingsRouteImport } from './routes/(app)/settings'
+import { Route as appRegulationsRouteImport } from './routes/(app)/regulations'
 import { Route as appProfileRouteImport } from './routes/(app)/profile'
 import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
 import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const appSettingsRoute = appSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appRegulationsRoute = appRegulationsRouteImport.update({
+  id: '/regulations',
+  path: '/regulations',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appProfileRoute = appProfileRouteImport.update({
@@ -62,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof appDashboardRoute
   '/profile': typeof appProfileRoute
+  '/regulations': typeof appRegulationsRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof appDashboardRoute
   '/profile': typeof appProfileRoute
+  '/regulations': typeof appRegulationsRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/(app)': typeof appRouteRouteWithChildren
   '/(app)/dashboard': typeof appDashboardRoute
   '/(app)/profile': typeof appProfileRoute
+  '/(app)/regulations': typeof appRegulationsRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/contracts/$id': typeof appContractsIdRoute
   '/(app)/contracts/create': typeof appContractsCreateRoute
@@ -93,6 +102,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/profile'
+    | '/regulations'
     | '/settings'
     | '/contracts/$id'
     | '/contracts/create'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/profile'
+    | '/regulations'
     | '/settings'
     | '/contracts/$id'
     | '/contracts/create'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/(app)'
     | '/(app)/dashboard'
     | '/(app)/profile'
+    | '/(app)/regulations'
     | '/(app)/settings'
     | '/(app)/contracts/$id'
     | '/(app)/contracts/create'
@@ -144,6 +156,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof appSettingsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/regulations': {
+      id: '/(app)/regulations'
+      path: '/regulations'
+      fullPath: '/regulations'
+      preLoaderRoute: typeof appRegulationsRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/profile': {
@@ -187,6 +206,7 @@ declare module '@tanstack/react-router' {
 interface appRouteRouteChildren {
   appDashboardRoute: typeof appDashboardRoute
   appProfileRoute: typeof appProfileRoute
+  appRegulationsRoute: typeof appRegulationsRoute
   appSettingsRoute: typeof appSettingsRoute
   appContractsIdRoute: typeof appContractsIdRoute
   appContractsCreateRoute: typeof appContractsCreateRoute
@@ -196,6 +216,7 @@ interface appRouteRouteChildren {
 const appRouteRouteChildren: appRouteRouteChildren = {
   appDashboardRoute: appDashboardRoute,
   appProfileRoute: appProfileRoute,
+  appRegulationsRoute: appRegulationsRoute,
   appSettingsRoute: appSettingsRoute,
   appContractsIdRoute: appContractsIdRoute,
   appContractsCreateRoute: appContractsCreateRoute,

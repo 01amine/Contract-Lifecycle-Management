@@ -1,10 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
-  Clipboard,
+  ClipboardListIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   PlusIcon,
   Settings2Icon,
+  SettingsIcon,
   User2,
 } from "lucide-react";
 import logo from "@/assets/logo-square.svg";
@@ -17,12 +18,17 @@ const topNavItems = [
     to: "/dashboard",
   },
   {
-    icon: Clipboard,
+    icon: ClipboardListIcon,
     label: "Contracts",
     to: "/contracts",
   },
   {
     icon: Settings2Icon,
+    label: "Regulations",
+    to: "/regulations",
+  },
+  {
+    icon: SettingsIcon,
     label: "Settings",
     to: "/settings",
   },
@@ -64,8 +70,8 @@ export function Navigation() {
           ))}
           <li>
             <Link to="/contracts/create">
-              <button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-1 scale-110 cursor-pointer">
-                <PlusIcon className="size-4" />
+              <button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-1 scale-115 cursor-pointer">
+                <PlusIcon className="size-4" strokeWidth={2.5} />
               </button>
             </Link>
           </li>
