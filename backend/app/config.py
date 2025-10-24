@@ -6,6 +6,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "*"
+    QDRANT_URL:str="http://qdrant:6333"
+    QDRANT_GRPC_PORT:int=6334
+    QDRANT_STORAGE_PATH:str="/qdrant/storage"
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",") if o.strip()]
@@ -26,12 +29,13 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_SECRET: str = Field(default=...)
     ENV: str = Field(default="development")
-
     MAILJET_API_KEY: str
     MAILJET_SECRET_KEY: str
     MAIL_FROM_ADDRESS: str
     ZR_EXPRESS_TOKEN: str
     ZR_EXPRESS_KEY: str
+    GOOGLE_EMBEDDING_API_KEY:str
+    EMBEDDING_MODEL:str="gemini-embedding-001"
 
     model_config = SettingsConfigDict(
         case_sensitive=True,
