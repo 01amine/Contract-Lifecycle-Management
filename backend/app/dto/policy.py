@@ -7,7 +7,7 @@ class ClauseSchema(BaseModel):
     clause_id: Optional[str] = None
     title: str
     text: str
-    numeric_limits: Optional[dict] = None  # e.g., {"cap": 250000}
+    numeric_limits: Optional[dict] = None
     mandatory: bool = True
 
 
@@ -30,7 +30,7 @@ class TemplateUpdateSchema(BaseModel):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class TemplateReadSchema(BaseModel):
-    id: Optional[str]  # Beanie will have the _id
+    id: Optional[str] 
     name: str
     country: str
     policy_type: str
@@ -41,14 +41,3 @@ class TemplateReadSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
     status: PoStatus
-
-
-  # Example of numeric_limits:
-    # {
-    #     "cap": 250000,            # maximum liability amount (QAR)
-    #     "min_fee": 1000,          # minimum fee required
-    #     "penalty_percent": 2.0    # late payment interest rate in %
-    # }
-    # Notes:
-    # - All keys are optional depending on the clause type
-    # - Used for validation, AI auto-correction, and enforcing policy rules
