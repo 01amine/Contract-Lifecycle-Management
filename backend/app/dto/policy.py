@@ -8,7 +8,7 @@ class ClauseSchema(BaseModel):
     clause_id: Optional[PydanticObjectId] = None
     title: str
     text: str
-    numeric_limits: Optional[dict] = None  # e.g., {"cap": 250000}
+    numeric_limits: Optional[dict] = None
     mandatory: bool = True
 
 
