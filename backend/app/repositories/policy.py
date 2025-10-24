@@ -3,13 +3,22 @@ from beanie import PydanticObjectId
 from datetime import datetime
 from app.models.policy import Template,  PoStatus  ,Clause
 from app.dto.policy import TemplateCreateSchema, TemplateUpdateSchema
+from services.embedding import ResponseSchema, TextDocumentProcessor
 
 
 class TemplateRepository:
 
     @staticmethod
     async def create(template: Template) -> Template:
-        return await template.insert()
+        try :
+            template= await template.insert()
+            embed_result: ResponseSchema = await TextDocumentProcessor.embed_template(template)
+            if not embed_result.success:
+                print(f"[WARNING] Embedding failed: {embed_result.message}")
+
+            return template
+        except Exception as e :
+            raise e
 
     @staticmethod
     async def get_by_id(template_id: str) -> Optional[Template]:

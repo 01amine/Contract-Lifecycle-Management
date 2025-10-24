@@ -53,3 +53,14 @@ class TemplateReadSchema(BaseModel):
     # Notes:
     # - All keys are optional depending on the clause type
     # - Used for validation, AI auto-correction, and enforcing policy rules
+
+
+class ClauseResponse(BaseModel):
+    clause_id: str
+    template_id: str
+    title: str
+    text: str
+    score: float
+    country: str
+    policy_type: str
+    version: int
