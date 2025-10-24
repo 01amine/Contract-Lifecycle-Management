@@ -1,5 +1,5 @@
 # Use Python 3.13 slim base image
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # Environment settings
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -25,6 +25,7 @@ COPY ./app ./app
 
 # Sync dependencies
 RUN uv sync
+RUN pip install --no-cache-dir google-generativeai qdrant-client
 
 # Expose port
 EXPOSE 8000
