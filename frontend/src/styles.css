@@ -5,7 +5,7 @@
 /* @custom-variant dark (&:is(.dark *)); */
 
 :root {
-  --background: oklch(0.97 0 0);
+  --background: oklch(0.96 0.0099 267.36);
   --foreground: oklch(0.141 0.005 285.823);
 
   --card: oklch(1 0 0);
@@ -14,10 +14,10 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
 
-  --primary: oklch(0.21 0.006 285.885);
+  --primary: #ff9500;
   --primary-foreground: oklch(0.985 0 0);
 
-  --secondary: oklch(0.967 0.001 286.375);
+  --secondary: #ffb534;
   --secondary-foreground: oklch(0.21 0.006 285.885);
 
   --muted: oklch(0.967 0.001 286.375);
@@ -29,7 +29,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
 
-  --border: oklch(0.92 0.004 286.32);
+  --border: oklch(0.95 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
   --ring: oklch(0.871 0.006 286.286);
 
@@ -39,7 +39,7 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
 
-  --radius: 0.85rem;
+  --radius: 1rem;
 
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.141 0.005 285.823);
@@ -135,6 +135,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -149,6 +150,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-width: thin;
   }
   body {
     @apply bg-background text-foreground;
@@ -157,5 +159,8 @@
       "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  .shadow-island {
+    @apply [box-shadow:inset_0_-2px_5px_0_rgba(0,0,0,0.03),0_4px_6px_0_rgba(0,0,0,0.04)];
   }
 }
