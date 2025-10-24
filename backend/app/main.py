@@ -14,6 +14,7 @@ from app.logger import logger
 from app.api.analytics import router as analytics_router
 from app.api.policy import router as policy_router
 from app.models.policy import Template
+from app.services.embedding import TextDocumentProcessor
 
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
@@ -24,6 +25,7 @@ async def init_mongo():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    
     await init_mongo()
     await init_minio_client(
         minio_host=settings.MINIO_HOST,
@@ -31,6 +33,7 @@ async def lifespan(app: FastAPI):
         minio_root_user=settings.MINIO_ROOT_USER,
         minio_root_password=settings.MINIO_ROOT_PASSWORD
     )
+    TextDocumentProcessor.init(settings.QDRANT_URL, settings.QDRANT_GRPC_PORT)
     yield
 
 app = FastAPI(lifespan=lifespan)

@@ -6,11 +6,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: coupon-backend-dev
-    environment:
-      ENV: development
-      PYTHONUNBUFFERED: "1"
     env_file:
       - .env.dev
+    environment:
+      ENV: ${ENV}
+      PYTHONUNBUFFERED: "1"
+      QDRANT_URL: ${QDRANT_URL}     # 👈 Loaded from .env.dev
     command: >
       sh -c "pip install -r requirements.txt &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -21,11 +22,16 @@ services:
     depends_on:
       - mongo
       - minio
+      - qdrant
+    networks:
+      - coupon_lexion_internal_net
     restart: "no"
 
   mongo:
     image: mongo:7
     container_name: coupon-mongo-dev
+    env_file:
+      - .env.dev
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
@@ -33,11 +39,15 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data_dev:/data/db
+    networks:
+      - coupon_lexion_internal_net
     restart: unless-stopped
 
   minio:
     image: minio/minio:latest
     container_name: coupon-minio-dev
+    env_file:
+      - .env.dev
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -47,6 +57,8 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data_dev:/data
+    networks:
+      - coupon_lexion_internal_net
     restart: unless-stopped
 
   minio_init:
@@ -54,11 +66,8 @@ services:
     container_name: coupon-minio-init
     depends_on:
       - minio
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_HOST: ${MINIO_HOST}
-      MINIO_PORT: ${MINIO_PORT}
+    env_file:
+      - .env.dev
     entrypoint: >
       sh -c "
         i=0;
@@ -70,11 +79,31 @@ services:
         mc mb --ignore-existing local/images || true;
         echo 'minio init finished';
       "
+    networks:
+      - coupon_lexion_internal_net
     restart: "no"
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.3
+    container_name: coupon-qdrant-dev
+    env_file:
+      - .env.dev
+    environment:
+      QDRANT__STORAGE__ON_DISK: "true"
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data_dev:/qdrant/storage
+    networks:
+      - coupon_lexion_internal_net
+    restart: unless-stopped
 
 volumes:
   minio_data_dev:
   mongo_data_dev:
+  qdrant_data_dev:
 
 networks:
   coupon_lexion_internal_net:
