@@ -1,0 +1,83 @@
+[
+  {
+    "clause_id": "test_001",
+    "text": "The Company shall have unlimited liability for any and all damages arising from this agreement, including consequential and indirect losses.",
+    "clause_type": "LIABILITY",
+    "risk_score": 0.95,
+    "risk_summary": " CRITICAL: Unlimited liability exposure detected. REQUIRES IMMEDIATE LEGAL REVIEW.",
+    "confidence_score": 0.95,
+    "matched_keywords": [
+      "liability",
+      "unlimited liability"
+    ],
+    "context_flags": [],
+    "alternative_types": []
+  },
+  {
+    "clause_id": "test_002",
+    "text": "Each party shall indemnify, defend, and hold harmless the other party from any claims, damages, or losses.",
+    "clause_type": "LIABILITY",
+    "risk_score": 0.9199999999999999,
+    "risk_summary": " CRITICAL: Unlimited liability exposure detected. REQUIRES IMMEDIATE LEGAL REVIEW.",
+    "confidence_score": 0.5,
+    "matched_keywords": [
+      "damages"
+    ],
+    "context_flags": [
+      "adjacent_high_risk"
+    ],
+    "alternative_types": [
+      [
+        "INDEMNITY",
+        0.8
+      ]
+    ]
+  },
+  {
+    "clause_id": "test_003",
+    "text": "Either party may terminate this agreement for convenience upon 30 days written notice.",
+    "clause_type": "TERMINATION",
+    "risk_score": 0.69,
+    "risk_summary": " MEDIUM: Standard termination provisions. Verify notice periods align with policy.",
+    "confidence_score": 0.95,
+    "matched_keywords": [
+      "terminate"
+    ],
+    "context_flags": [
+      "adjacent_high_risk"
+    ],
+    "alternative_types": []
+  },
+  {
+    "clause_id": "test_004",
+    "text": "All confidential information disclosed under this agreement shall remain confidential and survive termination.",
+    "clause_type": "TERMINATION",
+    "risk_score": 0.6,
+    "risk_summary": " MEDIUM: Standard termination provisions. Verify notice periods align with policy.",
+    "confidence_score": 0.6,
+    "matched_keywords": [
+      "termination"
+    ],
+    "context_flags": [],
+    "alternative_types": [
+      [
+        "CONFIDENTIALITY",
+        0.4
+      ]
+    ]
+  },
+  {
+    "clause_id": "test_005",
+    "text": "Neither party shall be liable for delays caused by force majeure events, including acts of God or circumstances beyond reasonable control.",
+    "clause_type": "FORCE_MAJEURE",
+    "risk_score": 0.25,
+    "risk_summary": " LOW-MEDIUM: FORCE_MAJEURE clause warrants brief review.",
+    "confidence_score": 0.95,
+    "matched_keywords": [
+      "force majeure",
+      "circumstances beyond"
+    ],
+    "context_flags": [],
+    "alternative_types": []
+  }
+]
