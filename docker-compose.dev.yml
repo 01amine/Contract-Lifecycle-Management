@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: coupon-backend-dev
+    environment:
+      ENV: development
+      PYTHONUNBUFFERED: "1"
+    env_file:
+      - .env.dev
+    command: >
+      sh -c "pip install -r requirements.txt &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - mongo
+      - minio
+    restart: "no"
+
+  mongo:
+    image: mongo:7
+    container_name: coupon-mongo-dev
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data_dev:/data/db
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: coupon-minio-dev
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data_dev:/data
+    restart: unless-stopped
+
+  minio_init:
+    image: minio/mc
+    container_name: coupon-minio-init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_PORT: ${MINIO_PORT}
+    entrypoint: >
+      sh -c "
+        i=0;
+        until mc alias set local http://minio:${MINIO_PORT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} >/dev/null 2>&1 || [ \$i -ge 30 ]; do
+          i=\$((i+1));
+          echo 'waiting for minio...';
+          sleep 1;
+        done;
+        mc mb --ignore-existing local/images || true;
+        echo 'minio init finished';
+      "
+    restart: "no"
+
+volumes:
+  minio_data_dev:
+  mongo_data_dev:
+
+networks:
+  coupon_lexion_internal_net:
+    name: coupon_lexion_internal_net
