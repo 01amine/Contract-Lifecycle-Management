@@ -16,6 +16,7 @@ from app.exceptions import HTTPBaseException
 from app.logger import logger
 from app.api.analytics import router as analytics_router
 from app.api.policy import router as policy_router
+from app.api.test import router as test
 from app.models.policy import Template
 from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
@@ -23,7 +24,8 @@ from app.models.documentUploaded import ContractDocument
 from app.services.extractor import DocumentExtractor
 from app.services.rule_engine import RuleEngineService
 from app.services.segmenter import Clause_cl, ClauseSegmenter
-
+from agno.os import AgentOS
+from app.services.agent  import agent
 
 
 
@@ -63,8 +65,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+agent_os = AgentOS(
+    agents=[agent],
+)
 
-# Correct middleware setup
+app.mount("/agno", agent_os.get_app())
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -120,4 +127,5 @@ app.include_router(contract_router)
 # app.include_router(categorie_router)
 app.include_router(analytics_router)
 app.include_router(policy_router)
+app.include_router(test)
 

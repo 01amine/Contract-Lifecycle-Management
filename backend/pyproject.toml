@@ -27,7 +27,7 @@ dependencies = [
     "pillow>=11.3.0",
     "pdfminer-six>=20250506",
     "pytesseract>=0.3.13",
-    "agno>=2.2.1",
+    "google-genai>=1.46.0",
     "miniopy-async>=1.21.2",
 ]
 

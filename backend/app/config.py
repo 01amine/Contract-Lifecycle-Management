@@ -2,19 +2,17 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-try:
-    from dotenv import load_dotenv
-    dotenv_path = Path(__file__).resolve().parent.parent / '.env'
-    if dotenv_path.exists():
-        print(f"Loading environment variables from: {dotenv_path}")
-        load_dotenv(dotenv_path)
-    else:
-        print(f"Warning: .env file not found at {dotenv_path}")
-except ImportError:
-    print("Warning: python-dotenv not installed. Environment variables must be set manually.")
+dotenv_path = Path(__file__).parent.parent.parent / ".env"
+if dotenv_path.exists():
+    print(f"Loading environment variables from: {dotenv_path}")
+    load_dotenv(dotenv_path)
+else:
+    print("Warning: .env file not found at expected path.")
+
 
 @dataclass
 class OCRConfig:

@@ -10,7 +10,6 @@ from app.models.policy import Template
 from qdrant_client.models import VectorParams,Distance
 
 
-# Configure Gemini
 genai.configure(api_key=settings.GOOGLE_EMBEDDING_API_KEY)
 
 
@@ -38,8 +37,8 @@ class TextDocumentProcessor:
             await TextDocumentProcessor.qdrant.create_collection(
                 collection_name=collection_name,
                 vectors_config=VectorParams(
-                    size=3072,        # Dimensionality of your embeddings
-                    distance=Distance.COSINE # Distance metric
+                    size=3072,       
+                    distance=Distance.COSINE
                 )
             )
             print(f"[DEBUG] Collection '{collection_name}' created")
@@ -83,12 +82,11 @@ class TextDocumentProcessor:
 
             print(f"[DEBUG] vectors computed: {vectors}")
 
-            # Generate valid UUIDs for Qdrant point IDs
             points: List[PointStruct] = [
                 PointStruct(
-                    id=str(uuid.uuid4()),  # Qdrant-safe UUID
+                    id=str(uuid.uuid4()),  
                     vector=vectors[i],
-                    payload=metadata[i]   # original clause_id is stored in payload
+                    payload=metadata[i]   
                 )
                 for i in range(len(vectors))
             ]
