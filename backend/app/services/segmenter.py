@@ -9,7 +9,7 @@ class Clause_cl:
     clause_id: str  
     level: int  
     start_pos: int  
-    heading: Optional[str] = None  
+    heading: Optional[str] = None   
 
 
 class ClauseSegmenter:

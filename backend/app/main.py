@@ -1,3 +1,5 @@
+from dto.policy import ClauseResponse
+from dto.risk import ClassifiedClause
 from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
@@ -19,6 +21,11 @@ from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
 from app.models.documentUploaded import ContractDocument
 from app.services.extractor import DocumentExtractor
+from app.services.llm_client import LLMSuggestion, LLMVerdict, LLMWorker
+from app.services.rule_engine import RuleEngineService
+from app.services.segmenter import Clause_cl, ClauseSegmenter
+
+
 
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
@@ -53,6 +60,8 @@ async def lifespan(app: FastAPI):
     document_extract =await init_ocr()
     app.state.document_extract = document_extract
     yield
+    
+
 
 app = FastAPI(lifespan=lifespan)
 
