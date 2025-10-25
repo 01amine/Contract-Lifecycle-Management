@@ -20,10 +20,10 @@ from app.models.policy import Template
 from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
 from app.models.documentUploaded import ContractDocument
-from services.extractor import DocumentExtractor
-from services.llm_client import LLMSuggestion, LLMVerdict, LLMWorker
-from services.rule_engine import RuleEngineService
-from services.segmenter import Clause_cl, ClauseSegmenter
+from app.services.extractor import DocumentExtractor
+from app.services.llm_client import LLMSuggestion, LLMVerdict, LLMWorker
+from app.services.rule_engine import RuleEngineService
+from app.services.segmenter import Clause_cl, ClauseSegmenter
 
 
 
@@ -54,6 +54,9 @@ async def init_mongo():
 async def init_qdrant():
     client =AsyncQdrantClient(url=settings.QDRANT_URL, port=6333)
     return client
+
+async def init_ocr():
+    DocumentExtractor()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

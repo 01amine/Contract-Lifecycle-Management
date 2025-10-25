@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Optional
 import uuid
-from fastapi import APIRouter
+from fastapi import APIRouter, Body, File
 from fastapi.responses import HTMLResponse
 
 from app.minio import DocumentBucket
@@ -103,3 +104,12 @@ async def get_signed_url():
     </html>
     """
     return HTMLResponse(content=html)
+
+
+@router.post("/upload-contract")
+async def upload_contract(
+    file: Optional[bytes] = File(None),
+    contant: Optional[str] = Body(None)
+):
+    if file :
+        pass
