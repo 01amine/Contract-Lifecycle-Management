@@ -9,16 +9,22 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as NotFoundRouteImport } from './routes/not-found'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as appSettingsRouteImport } from './routes/(app)/settings'
-import { Route as appRegulationsRouteImport } from './routes/(app)/regulations'
 import { Route as appProfileRouteImport } from './routes/(app)/profile'
+import { Route as appPoliciesRouteImport } from './routes/(app)/policies'
 import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
 import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
 import { Route as appContractsCreateRouteImport } from './routes/(app)/contracts.create'
 import { Route as appContractsIdRouteImport } from './routes/(app)/contracts.$id'
 
+const NotFoundRoute = NotFoundRouteImport.update({
+  id: '/not-found',
+  path: '/not-found',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
   getParentRoute: () => rootRouteImport,
@@ -33,14 +39,14 @@ const appSettingsRoute = appSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appRegulationsRoute = appRegulationsRouteImport.update({
-  id: '/regulations',
-  path: '/regulations',
-  getParentRoute: () => appRouteRoute,
-} as any)
 const appProfileRoute = appProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appPoliciesRoute = appPoliciesRouteImport.update({
+  id: '/policies',
+  path: '/policies',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appDashboardRoute = appDashboardRouteImport.update({
@@ -66,9 +72,10 @@ const appContractsIdRoute = appContractsIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/not-found': typeof NotFoundRoute
   '/dashboard': typeof appDashboardRoute
+  '/policies': typeof appPoliciesRoute
   '/profile': typeof appProfileRoute
-  '/regulations': typeof appRegulationsRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
@@ -76,9 +83,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/not-found': typeof NotFoundRoute
   '/dashboard': typeof appDashboardRoute
+  '/policies': typeof appPoliciesRoute
   '/profile': typeof appProfileRoute
-  '/regulations': typeof appRegulationsRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
@@ -88,9 +96,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(app)': typeof appRouteRouteWithChildren
+  '/not-found': typeof NotFoundRoute
   '/(app)/dashboard': typeof appDashboardRoute
+  '/(app)/policies': typeof appPoliciesRoute
   '/(app)/profile': typeof appProfileRoute
-  '/(app)/regulations': typeof appRegulationsRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/contracts/$id': typeof appContractsIdRoute
   '/(app)/contracts/create': typeof appContractsCreateRoute
@@ -100,9 +109,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/not-found'
     | '/dashboard'
+    | '/policies'
     | '/profile'
-    | '/regulations'
     | '/settings'
     | '/contracts/$id'
     | '/contracts/create'
@@ -110,9 +120,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/not-found'
     | '/dashboard'
+    | '/policies'
     | '/profile'
-    | '/regulations'
     | '/settings'
     | '/contracts/$id'
     | '/contracts/create'
@@ -121,9 +132,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/(app)'
+    | '/not-found'
     | '/(app)/dashboard'
+    | '/(app)/policies'
     | '/(app)/profile'
-    | '/(app)/regulations'
     | '/(app)/settings'
     | '/(app)/contracts/$id'
     | '/(app)/contracts/create'
@@ -133,10 +145,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   appRouteRoute: typeof appRouteRouteWithChildren
+  NotFoundRoute: typeof NotFoundRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/not-found': {
+      id: '/not-found'
+      path: '/not-found'
+      fullPath: '/not-found'
+      preLoaderRoute: typeof NotFoundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(app)': {
       id: '/(app)'
       path: ''
@@ -158,18 +178,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appSettingsRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/regulations': {
-      id: '/(app)/regulations'
-      path: '/regulations'
-      fullPath: '/regulations'
-      preLoaderRoute: typeof appRegulationsRouteImport
-      parentRoute: typeof appRouteRoute
-    }
     '/(app)/profile': {
       id: '/(app)/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof appProfileRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/policies': {
+      id: '/(app)/policies'
+      path: '/policies'
+      fullPath: '/policies'
+      preLoaderRoute: typeof appPoliciesRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/dashboard': {
@@ -205,8 +225,8 @@ declare module '@tanstack/react-router' {
 
 interface appRouteRouteChildren {
   appDashboardRoute: typeof appDashboardRoute
+  appPoliciesRoute: typeof appPoliciesRoute
   appProfileRoute: typeof appProfileRoute
-  appRegulationsRoute: typeof appRegulationsRoute
   appSettingsRoute: typeof appSettingsRoute
   appContractsIdRoute: typeof appContractsIdRoute
   appContractsCreateRoute: typeof appContractsCreateRoute
@@ -215,8 +235,8 @@ interface appRouteRouteChildren {
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appDashboardRoute: appDashboardRoute,
+  appPoliciesRoute: appPoliciesRoute,
   appProfileRoute: appProfileRoute,
-  appRegulationsRoute: appRegulationsRoute,
   appSettingsRoute: appSettingsRoute,
   appContractsIdRoute: appContractsIdRoute,
   appContractsCreateRoute: appContractsCreateRoute,
@@ -230,6 +250,7 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   appRouteRoute: appRouteRouteWithChildren,
+  NotFoundRoute: NotFoundRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

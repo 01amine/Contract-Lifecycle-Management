@@ -9,7 +9,7 @@ import {
   User2,
 } from "lucide-react";
 import logo from "@/assets/logo-square.svg";
-import { NavItem } from "@/components/nav-item";
+import { NavItem } from "@/layout/nav-item";
 
 const topNavItems = [
   {

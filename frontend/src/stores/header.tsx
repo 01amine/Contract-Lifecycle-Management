@@ -28,7 +28,6 @@ export const useHeaderStore = create<HeaderStore>((set) => ({
 export const useHeader = (title: Title | string) => {
   const { setTitle, setterId } = useHeaderStore();
   const setterIdRef = useRef(Math.random().toString(36).substring(2, 15));
-  console.log(title);
 
   useEffect(() => {
     if (typeof title === "string") {
