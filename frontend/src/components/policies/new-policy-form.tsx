@@ -1,3 +1,4 @@
+import { useHeader } from "@/stores/header";
 import { PolicyForm } from "./policy-form";
 
 interface NewPolicyFormProps {
@@ -5,6 +6,8 @@ interface NewPolicyFormProps {
 }
 
 export function NewPolicyForm({ setActiveTab }: NewPolicyFormProps) {
+  useHeader("Create a new policy", 1);
+
   const handleSuccess = () => {
     setActiveTab("policies");
   };

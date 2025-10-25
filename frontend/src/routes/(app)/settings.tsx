@@ -106,7 +106,7 @@ function RouteComponent() {
                 <div>
                   <Label className="mb-2 block">Language</Label>
                   <Select defaultValue="en">
-                    <SelectTrigger className="md:min-w-48">
+                    <SelectTrigger className="md:min-w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -120,7 +120,7 @@ function RouteComponent() {
                 <div>
                   <Label className="mb-2 block">Timezone</Label>
                   <Select defaultValue="utc">
-                    <SelectTrigger className="md:min-w-48">
+                    <SelectTrigger className="md:min-w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -150,7 +150,7 @@ function RouteComponent() {
                 <div>
                   <Label className="mb-2 block">Default Policy</Label>
                   <Select defaultValue="none">
-                    <SelectTrigger className="md:min-w-48">
+                    <SelectTrigger className="md:min-w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -172,7 +172,7 @@ function RouteComponent() {
                     Default Approval Workflow
                   </Label>
                   <Select defaultValue="standard">
-                    <SelectTrigger className="md:min-w-48">
+                    <SelectTrigger className="md:min-w-64">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

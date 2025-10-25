@@ -55,7 +55,8 @@ export function PolicyItem({
                 Created: {format(new Date(policy.created_at), "MMM d, yyyy")}
               </span>
               <span>
-                Updated: {format(new Date(policy.updated_at), "MMM d, yyyy")}
+                Updated:{" "}
+                {format(new Date(policy.updated_at), "MMM d, yyyy HH:mm")}
               </span>
               <span>By: {policy.created_by}</span>
             </div>

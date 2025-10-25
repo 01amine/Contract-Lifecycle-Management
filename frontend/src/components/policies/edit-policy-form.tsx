@@ -1,5 +1,6 @@
 import { PolicyForm } from "./policy-form";
 import { usePolicy } from "@/actions/hooks/use-policies";
+import { useHeader } from "@/stores/header";
 import { Loader2 } from "lucide-react";
 
 interface EditPolicyFormProps {
@@ -12,6 +13,7 @@ export function EditPolicyForm({
   setActiveTab,
 }: EditPolicyFormProps) {
   const { data: policy, isLoading, error } = usePolicy(policyId);
+  useHeader(policy ? `Edit policy: ${policy.name}` : "Edit policy", 1);
 
   const handleCancel = () => {
     setActiveTab("policies");

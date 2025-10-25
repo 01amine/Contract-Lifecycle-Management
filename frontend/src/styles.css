@@ -165,6 +165,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
   .shadow-island {
-    @apply [box-shadow:inset_0_-2px_5px_0_rgba(0,0,0,0.03),0_4px_6px_0_rgba(0,0,0,0.04)];
+    @apply [box-shadow:inset_0_-2px_5px_0_rgba(0,0,0,0.03),0_4px_6px_0_rgba(0,0,0,0.04)] dark:[box-shadow:inset_1px_2px_4px_0_rgba(255,255,255,0.03),0_4px_5px_1px_rgba(255,255,255,0.04)];
   }
 }

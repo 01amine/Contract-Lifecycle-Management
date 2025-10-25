@@ -5,7 +5,7 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   PlusIcon,
-  Settings2Icon,
+  ScaleIcon,
   SettingsIcon,
   User2,
 } from "lucide-react";
@@ -25,7 +25,7 @@ const topNavItems = [
     to: "/contracts",
   },
   {
-    icon: Settings2Icon,
+    icon: ScaleIcon,
     label: "Policies",
     to: "/policies",
   },
@@ -58,7 +58,11 @@ export function Navigation() {
         <ul className="flex flex-col gap-6 text-sm pb-6">
           <li>
             <Link to="/">
-              <img src={logo} alt="Logo" className="size-6 scale-135" />
+              <img
+                src={logo}
+                alt="Logo"
+                className="size-6 scale-135 contrast-125 dark:brightness-90 dark:saturate-150"
+              />
             </Link>
           </li>
           {topNavItems.map((item) => (

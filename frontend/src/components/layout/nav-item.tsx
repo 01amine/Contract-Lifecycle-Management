@@ -18,7 +18,7 @@ export function NavItem({
 }: NavItemProps) {
   return (
     <li className="relative">
-      <Link to={to}>
+      <Link to={to} title={label}>
         <Icon
           className={cn(
             "size-6 transition-colors duration-300",
@@ -44,4 +44,3 @@ export function NavItem({
     </li>
   );
 }
-

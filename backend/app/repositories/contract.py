@@ -34,6 +34,7 @@ class ContractRepository:
         if not contract:
             return None
         contract.status = new_status
+        contract.version += 1  # Auto-increment version on every update
         contract.last_updated = datetime.utcnow()
         await contract.save()
         return contract
@@ -44,6 +45,7 @@ class ContractRepository:
         if not contract:
             return None
         contract.content = new_content
+        contract.version += 1  # Auto-increment version on every update
         contract.last_updated = datetime.utcnow()
         await contract.save()
         return contract

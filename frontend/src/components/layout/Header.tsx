@@ -1,9 +1,9 @@
-import { useHeaderStore } from "@/stores/header";
+import { useCurrentHeader } from "@/stores/header";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
 export function Header() {
-  const { title } = useHeaderStore();
+  const title = useCurrentHeader();
 
   if (!title) return null;
   return (
@@ -33,4 +33,3 @@ export function Header() {
     </header>
   );
 }
-

@@ -108,6 +108,9 @@ function RouteComponent() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/60">
+                  <th className="text-left p-4 font-semibold text-sm text-primary w-12">
+                    #
+                  </th>
                   <th className="text-left p-4 font-semibold text-sm text-primary">
                     File Name
                   </th>
@@ -132,6 +135,9 @@ function RouteComponent() {
                         : "bg-muted/50 hover:bg-muted/60"
                     }`}
                   >
+                    <td className="p-4 text-sm font-medium text-muted-foreground">
+                      {index + 1}
+                    </td>
                     <td className="p-4 text-sm font-medium">
                       <Link
                         to="/contracts/$id"

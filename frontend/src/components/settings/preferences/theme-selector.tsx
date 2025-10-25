@@ -24,7 +24,7 @@ export function ThemeSelector() {
         value={mounted ? theme : "system"}
         onValueChange={(value) => setTheme(value)}
       >
-        <SelectTrigger className="md:min-w-48">
+        <SelectTrigger className="md:min-w-64">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

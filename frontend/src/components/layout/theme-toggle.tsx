@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -12,7 +12,7 @@ export function ThemeToggle() {
   }, []);
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
   };
 
   if (!mounted) {
@@ -26,7 +26,7 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
     >
       <AnimatePresence mode="wait">
-        {theme === "dark" ? (
+        {resolvedTheme === "dark" ? (
           <motion.div
             key="sun"
             initial={{ rotate: 90, opacity: 0 }}

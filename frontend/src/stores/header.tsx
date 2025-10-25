@@ -13,33 +13,59 @@ export type Title =
       backPath: string;
     };
 
+interface HeaderEntry {
+  id: string;
+  title: Title;
+}
+
 interface HeaderStore {
-  title: Title | null;
-  setterId: string;
-  setTitle: (title: Title | null, setterId: string) => void;
+  layers: Record<number, HeaderEntry>;
+  setLayer: (layer: number, id: string, title: Title) => void;
+  removeLayer: (layer: number, id: string) => void;
 }
 
 export const useHeaderStore = create<HeaderStore>((set) => ({
-  title: null,
-  setterId: "",
-  setTitle: (title, setterId) => set({ title, setterId }),
+  layers: {},
+  setLayer: (layer, id, title) =>
+    set((state) => ({
+      layers: { ...state.layers, [layer]: { id, title } },
+    })),
+  removeLayer: (layer, id) =>
+    set((state) => {
+      // Only remove if the ID matches (prevents removing a layer that was overwritten)
+      if (state.layers[layer]?.id === id) {
+        const { [layer]: _, ...rest } = state.layers;
+        return { layers: rest };
+      }
+      return state;
+    }),
 }));
 
-export const useHeader = (title: Title | string) => {
-  const { setTitle, setterId } = useHeaderStore();
-  const setterIdRef = useRef(Math.random().toString(36).substring(2, 15));
+export const useHeader = (title: Title | string, layer: number = 0) => {
+  const { setLayer, removeLayer } = useHeaderStore();
+  const idRef = useRef(Math.random().toString(36).substring(2, 15));
 
   useEffect(() => {
-    if (typeof title === "string") {
-      setTitle({ type: "text", text: title }, setterIdRef.current);
-    } else {
-      setTitle(title, setterIdRef.current);
-    }
+    const normalizedTitle: Title =
+      typeof title === "string" ? { type: "text", text: title } : title;
+
+    // Set or update the layer
+    setLayer(layer, idRef.current, normalizedTitle);
+
     return () => {
-      // if the component is unmounted we only want to reset if its still relevant
-      if (setterIdRef.current === setterId) {
-        setTitle(null, "");
-      }
+      // Cleanup: remove this layer entry
+      removeLayer(layer, idRef.current);
     };
-  }, [title, setterId]);
+  }, [title, layer, setLayer, removeLayer]);
+};
+
+// Helper hook to get the current active header (highest layer number)
+export const useCurrentHeader = () => {
+  const layers = useHeaderStore((state) => state.layers);
+  const layerNumbers = Object.keys(layers).map(Number);
+
+  if (layerNumbers.length === 0) return null;
+
+  const maxLayer = Math.max(...layerNumbers);
+  return layers[maxLayer].title;
 };
