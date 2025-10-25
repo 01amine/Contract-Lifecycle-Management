@@ -4,97 +4,27 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Pencil, Trash2 } from "lucide-react";
-import { useConfirm } from "@/components/ui/confirm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Pencil,
+  Power,
+  Loader2,
+  CheckCircle,
+  Circle,
+  Archive,
+  Trash2,
+} from "lucide-react";
+import { usePolicies, useUpdatePolicy } from "@/actions/hooks/use-policies";
+import { format } from "date-fns";
+import { PolicyStatus } from "@/actions/policies";
 import { useState } from "react";
-
-interface Clause {
-  clause_id: string;
-  title: string;
-  text: string;
-  mandatory: boolean;
-}
-
-interface Policy {
-  id: string;
-  name: string;
-  clauses: Clause[];
-}
-
-const mockPolicies: Policy[] = [
-  {
-    id: "pol-privacy-001",
-    name: "Data Privacy Policy",
-    clauses: [
-      {
-        clause_id: "clause-1",
-        title: "Data Encryption",
-        text: "All personal data must be encrypted at rest and in transit",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-2",
-        title: "Data Retention",
-        text: "Data retention periods must not exceed 7 years",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-3",
-        title: "Data Deletion Rights",
-        text: "Users have the right to request data deletion",
-        mandatory: false,
-      },
-    ],
-  },
-  {
-    id: "pol-security-002",
-    name: "Security Policy",
-    clauses: [
-      {
-        clause_id: "clause-1",
-        title: "Two-Factor Authentication",
-        text: "Two-factor authentication is required for all accounts",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-2",
-        title: "Password Requirements",
-        text: "Passwords must be changed every 90 days",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-3",
-        title: "Incident Reporting",
-        text: "All security incidents must be reported within 24 hours",
-        mandatory: true,
-      },
-    ],
-  },
-  {
-    id: "pol-use-003",
-    name: "Acceptable Use Policy",
-    clauses: [
-      {
-        clause_id: "clause-1",
-        title: "Credential Sharing",
-        text: "Users must not share their credentials",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-2",
-        title: "Illegal Activities",
-        text: "Computing resources must not be used for illegal activities",
-        mandatory: true,
-      },
-      {
-        clause_id: "clause-3",
-        title: "Network Monitoring",
-        text: "All network traffic is monitored and logged",
-        mandatory: false,
-      },
-    ],
-  },
-];
+import { toast } from "sonner";
 
 export function PoliciesList({
   setActiveTab,
@@ -104,33 +34,125 @@ export function PoliciesList({
     additionalSearch?: Record<string, string>
   ) => void;
 }) {
-  const [policies, setPolicies] = useState<Policy[]>(mockPolicies);
+  const { data: policies, isLoading, error } = usePolicies();
+  const updatePolicy = useUpdatePolicy();
+  const [selectedPolicy, setSelectedPolicy] = useState<{
+    id: string;
+    currentStatus: PolicyStatus;
+  } | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { confirmDialog, confirm } = useConfirm({
-    title: "Delete policy?",
-    description:
-      "Are you sure you want to delete this policy? This action cannot be undone.",
-    destructive: true,
-  });
+  const handleStatusChange = async (newStatus: PolicyStatus) => {
+    if (!selectedPolicy) return;
 
-  const handleDelete = async (id: string) => {
-    const shouldDelete = await confirm();
-    if (shouldDelete) {
-      setPolicies(policies.filter((p) => p.id !== id));
+    try {
+      await updatePolicy.mutateAsync({
+        id: selectedPolicy.id,
+        data: {
+          status: newStatus,
+        },
+      });
+      toast.success(`Policy status changed to ${newStatus}`);
+      setIsDialogOpen(false);
+      setSelectedPolicy(null);
+    } catch (error) {
+      toast.error("Failed to update policy status");
     }
+  };
+
+  const openStatusDialog = (policyId: string, currentStatus: PolicyStatus) => {
+    setSelectedPolicy({ id: policyId, currentStatus });
+    setIsDialogOpen(true);
   };
 
   return (
     <>
-      {confirmDialog}
-      <div className="p-6 border rounded-xl shadow-island bg-card h-[calc(90vh-5rem)] flex flex-col">
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Policy Status</DialogTitle>
+            <DialogDescription>
+              Select the new status for this policy
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4">
+            <button
+              type="button"
+              onClick={() => handleStatusChange(PolicyStatus.DRAFT)}
+              disabled={updatePolicy.isPending}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedPolicy?.currentStatus === PolicyStatus.DRAFT
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:border-primary/50"
+              }`}
+            >
+              <Circle className="size-5 mx-auto mb-2 text-primary" />
+              <span className="text-sm font-medium">Draft</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleStatusChange(PolicyStatus.ACTIVE)}
+              disabled={updatePolicy.isPending}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedPolicy?.currentStatus === PolicyStatus.ACTIVE
+                  ? "border-green-500 bg-green-500/10"
+                  : "border-border hover:border-green-500/50"
+              }`}
+            >
+              <CheckCircle className="size-5 mx-auto mb-2 text-green-500" />
+              <span className="text-sm font-medium">Active</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleStatusChange(PolicyStatus.ARCHIVED)}
+              disabled={updatePolicy.isPending}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedPolicy?.currentStatus === PolicyStatus.ARCHIVED
+                  ? "border-amber-500 bg-amber-500/10"
+                  : "border-border hover:border-amber-500/50"
+              }`}
+            >
+              <Archive className="size-5 mx-auto mb-2 text-amber-500" />
+              <span className="text-sm font-medium">Archived</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleStatusChange(PolicyStatus.DELETED)}
+              disabled={updatePolicy.isPending}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                selectedPolicy?.currentStatus === PolicyStatus.DELETED
+                  ? "border-red-500 bg-red-500/10"
+                  : "border-border hover:border-red-500/50"
+              }`}
+            >
+              <Trash2 className="size-5 mx-auto mb-2 text-red-500" />
+              <span className="text-sm font-medium">Deleted</span>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <div className="p-6 border rounded-xl shadow-island bg-card min-h-[calc(90vh-5rem)] mb-2 flex flex-col">
         <h2 className="text-lg font-semibold mb-4">Policies</h2>
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          {policies.length === 0 ? (
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {error && (
+            <div className="p-12 border border-dashed rounded-lg text-center">
+              <p className="text-destructive">Failed to load policies</p>
+            </div>
+          )}
+
+          {!isLoading && !error && policies && policies.length === 0 && (
             <div className="p-12 border border-dashed rounded-lg text-center">
               <p className="text-muted-foreground">No policies yet.</p>
             </div>
-          ) : (
+          )}
+
+          {!isLoading && !error && policies && policies.length > 0 && (
             <Accordion type="single" collapsible>
               {policies.map((policy) => (
                 <AccordionItem
@@ -140,7 +162,42 @@ export function PoliciesList({
                 >
                   <AccordionTrigger className="py-3 hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-medium">{policy.name}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{policy.name}</span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                            {policy.policy_type}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">
+                            Country: {policy.country}
+                          </span>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded capitalize ${
+                              policy.status === PolicyStatus.ACTIVE
+                                ? "bg-green-500/10 text-green-600"
+                                : policy.status === PolicyStatus.DRAFT
+                                ? "bg-amber-500/10 text-amber-600"
+                                : policy.status === PolicyStatus.ARCHIVED
+                                ? "bg-gray-500/10 text-gray-600"
+                                : "bg-red-500/10 text-red-600"
+                            }`}
+                          >
+                            {policy.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                          <span>v{policy.version}</span>
+                          <span>
+                            Created:{" "}
+                            {format(new Date(policy.created_at), "MMM d, yyyy")}
+                          </span>
+                          <span>
+                            Updated:{" "}
+                            {format(new Date(policy.updated_at), "MMM d, yyyy")}
+                          </span>
+                          <span>By: {policy.created_by}</span>
+                        </div>
+                      </div>
                       <div
                         className="flex items-center gap-2"
                         onClick={(e) => e.stopPropagation()}
@@ -157,36 +214,52 @@ export function PoliciesList({
                         </div>
                         <div
                           className="p-2 hover:bg-accent rounded-md transition-colors"
-                          onClick={() => handleDelete(policy.id)}
+                          onClick={() =>
+                            openStatusDialog(policy.id, policy.status)
+                          }
+                          title="Change policy status"
                         >
-                          <Trash2 className="size-4" />
+                          <Power className="size-4" />
                         </div>
                       </div>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="pb-4">
+                    {policy.description && (
+                      <div className="mb-4 p-2 bg-muted/50 rounded-sm">
+                        <p className="text-sm text-muted-foreground">
+                          {policy.description}
+                        </p>
+                      </div>
+                    )}
                     <div className="space-y-3">
-                      {policy.clauses.map((clause, index) => (
-                        <div
-                          key={clause.clause_id}
-                          className="flex items-start gap-2 text-sm"
-                        >
-                          <span className="font-bold font-title text-muted-foreground shrink-0">
-                            {index + 1}.
-                          </span>
-                          <div className="flex-1">
-                            <div className="font-medium">{clause.title}</div>
-                            <div className="text-muted-foreground">
-                              {clause.text}
+                      {policy.clauses.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No clauses defined yet.
+                        </p>
+                      ) : (
+                        policy.clauses.map((clause, index) => (
+                          <div
+                            key={clause.clause_id}
+                            className="flex items-start gap-2 text-sm"
+                          >
+                            <span className="font-bold font-title text-muted-foreground shrink-0">
+                              {index + 1}.
+                            </span>
+                            <div className="flex-1">
+                              <div className="font-medium">{clause.title}</div>
+                              <div className="text-muted-foreground">
+                                {clause.text}
+                              </div>
+                              {clause.mandatory && (
+                                <span className="text-xs text-primary mt-1 inline-block">
+                                  Required
+                                </span>
+                              )}
                             </div>
-                            {clause.mandatory && (
-                              <span className="text-xs text-primary mt-1 inline-block">
-                                Required
-                              </span>
-                            )}
                           </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

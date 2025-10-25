@@ -2,7 +2,7 @@ import re
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
 from app.services.llm_client import LLMClient
-from app.dto.ll import LLMClauseListDTO 
+from app.dto.llm_clause import LLMClauseListDTO 
 
 @dataclass
 class Clause_cl:

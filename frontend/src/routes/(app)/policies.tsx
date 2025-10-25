@@ -27,7 +27,7 @@ function RouteComponent() {
         <PoliciesList setActiveTab={setActiveTab} />
       </TabContent>
       <TabContent value="new-policy" activeTab={activeTab}>
-        <NewPolicyForm />
+        <NewPolicyForm setActiveTab={setActiveTab} />
       </TabContent>
       <TabContent value="edit-policy" activeTab={activeTab}>
         <EditPolicyForm policyId={policyId} setActiveTab={setActiveTab} />

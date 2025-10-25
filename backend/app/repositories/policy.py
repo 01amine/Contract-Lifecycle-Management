@@ -45,10 +45,10 @@ class TemplateRepository:
         update_dict['updated_at'] = datetime.utcnow()
         template = await Template.get(template_id)
         if template:
+            # Auto-increment version on every update
+            template.version += 1
+            update_dict['version'] = template.version
             await template.update({"$set": update_dict})
-            if 'version' not in update_dict:
-                template.version += 1
-                await template.save()
             return template
         return None
 

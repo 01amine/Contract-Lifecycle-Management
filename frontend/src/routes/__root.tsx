@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { NotFound } from "./not-found";
+import { Toaster } from "@/components/ui/sonner";
 
 import type { QueryClient } from "@tanstack/react-query";
 
@@ -16,6 +17,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <Outlet />
+      <Toaster />
       <TanStackDevtools
         config={{
           position: "bottom-right",

@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { format } from "date-fns";
+import { useContracts } from "@/actions/hooks/use-contracts";
+import { ContractStatus } from "@/actions/contracts";
+import { getStatusColor, getStatusLabel } from "@/lib/contract-status";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,
@@ -18,79 +22,36 @@ export const Route = createFileRoute("/(app)/contracts/" as any)({
 
 type ProcessingStep = "all" | "pending" | "completed" | "discarded";
 
-interface Contract {
-  id: string;
-  title: string;
-  client: string;
-  date: string;
-  amount: string;
-  status: "pending" | "completed" | "discarded";
-}
-
-const mockContracts: Contract[] = [
-  {
-    id: "1",
-    title: "Software Development Agreement",
-    client: "Tech Corp Inc.",
-    date: "2024-01-15",
-    amount: "$50,000",
-    status: "pending",
-  },
-  {
-    id: "2",
-    title: "Marketing Services Contract",
-    client: "Marketing Solutions",
-    date: "2024-01-20",
-    amount: "$25,000",
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Consulting Agreement",
-    client: "Business Consulting LLC",
-    date: "2024-02-01",
-    amount: "$35,000",
-    status: "pending",
-  },
-  {
-    id: "4",
-    title: "Non-Disclosure Agreement",
-    client: "StartupXYZ",
-    date: "2024-02-10",
-    amount: "$0",
-    status: "completed",
-  },
-  {
-    id: "5",
-    title: "Service Level Agreement",
-    client: "Enterprise Systems",
-    date: "2024-02-15",
-    amount: "$75,000",
-    status: "discarded",
-  },
-  {
-    id: "6",
-    title: "Vendor Agreement",
-    client: "Supply Chain Co.",
-    date: "2024-02-20",
-    amount: "$15,000",
-    status: "pending",
-  },
-];
-
 function RouteComponent() {
   useHeader("Your contracts");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("all");
 
-  const filteredContracts = mockContracts.filter((contract) => {
-    const matchesSearch =
-      contract.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contract.client.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDate = !dateFilter || contract.date === dateFilter;
-    const matchesStatus =
-      processingStep === "all" || contract.status === processingStep;
+  const { data: contracts, isLoading, error } = useContracts();
+
+  const filteredContracts = (contracts || []).filter((contract) => {
+    const matchesSearch = contract.file_name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesDate =
+      !dateFilter || contract.created_at.startsWith(dateFilter);
+
+    let matchesStatus = true;
+    if (processingStep !== "all") {
+      if (processingStep === "pending") {
+        matchesStatus =
+          contract.status === ContractStatus.DRAFT ||
+          contract.status === ContractStatus.UNDER_REVIEW;
+      } else if (processingStep === "completed") {
+        matchesStatus =
+          contract.status === ContractStatus.APPROVED ||
+          contract.status === ContractStatus.SIGNED;
+      } else if (processingStep === "discarded") {
+        matchesStatus = contract.status === ContractStatus.REJECTED;
+      }
+    }
+
     return matchesSearch && matchesDate && matchesStatus;
   });
 
@@ -130,72 +91,79 @@ function RouteComponent() {
       </div>
       {/* Table */}
       <div className="border rounded-xl shadow-island bg-card overflow-hidden min-h-[calc(90vh-5rem)]">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/60">
-                <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Title
-                </th>
-                <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Client
-                </th>
-                <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Date
-                </th>
-                <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Amount
-                </th>
-                <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredContracts.map((contract, index) => (
-                <tr
-                  key={contract.id}
-                  className={`transition-colors ${
-                    index % 2 === 0
-                      ? "bg-card"
-                      : "bg-muted/50 hover:bg-muted/60"
-                  }`}
-                >
-                  <td className="p-4 text-sm font-medium">
-                    <Link
-                      to="/contracts/$id"
-                      params={{ id: contract.id }}
-                      className="hover:underline"
-                    >
-                      {contract.title}
-                    </Link>
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground">
-                    {contract.client}
-                  </td>
-                  <td className="p-4 text-sm">
-                    {format(new Date(contract.date), "d MMM yyyy")}
-                  </td>
-                  <td className="p-4 text-sm font-medium">{contract.amount}</td>
-                  <td className="p-4 text-sm">
-                    <span
-                      className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
-                        contract.status === "pending"
-                          ? "bg-amber-500/10 text-amber-600"
-                          : contract.status === "completed"
-                          ? "bg-green-500/10 text-green-600"
-                          : "bg-red-500/10 text-red-600"
-                      }`}
-                    >
-                      {contract.status}
-                    </span>
-                  </td>
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-12 text-destructive">
+            Failed to load contracts
+          </div>
+        )}
+
+        {!isLoading && !error && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/60">
+                  <th className="text-left p-4 font-semibold text-sm text-primary">
+                    File Name
+                  </th>
+                  <th className="text-left p-4 font-semibold text-sm text-primary">
+                    Status
+                  </th>
+                  <th className="text-left p-4 font-semibold text-sm text-primary">
+                    Created At
+                  </th>
+                  <th className="text-left p-4 font-semibold text-sm text-primary">
+                    Version
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredContracts.length === 0 && (
+              </thead>
+              <tbody>
+                {filteredContracts.map((contract, index) => (
+                  <tr
+                    key={contract.id}
+                    className={`transition-colors ${
+                      index % 2 === 0
+                        ? "bg-card"
+                        : "bg-muted/50 hover:bg-muted/60"
+                    }`}
+                  >
+                    <td className="p-4 text-sm font-medium">
+                      <Link
+                        to="/contracts/$id"
+                        params={{ id: contract.id }}
+                        className="hover:underline"
+                      >
+                        {contract.file_name}
+                      </Link>
+                    </td>
+                    <td className="p-4 text-sm">
+                      <span
+                        className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
+                          contract.status
+                        )}`}
+                      >
+                        {getStatusLabel(contract.status)}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm">
+                      {format(new Date(contract.created_at), "d MMM yyyy")}
+                    </td>
+                    <td className="p-4 text-sm font-medium">
+                      v{contract.version}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!isLoading && !error && filteredContracts.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             No contracts found matching your filters.
           </div>

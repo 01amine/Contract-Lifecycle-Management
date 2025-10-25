@@ -84,7 +84,7 @@ interface TabContentProps {
 
 export function TabContent({ value, activeTab, children }: TabContentProps) {
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-x-hidden overflow-y-visible">
       <AnimatePresence mode="popLayout">
         {value === activeTab && (
           <motion.div
@@ -92,7 +92,7 @@ export function TabContent({ value, activeTab, children }: TabContentProps) {
             initial={{ opacity: 0, x: 600 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -600 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             {children}
           </motion.div>
