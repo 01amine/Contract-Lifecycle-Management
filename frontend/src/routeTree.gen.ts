@@ -18,8 +18,10 @@ import { Route as appPoliciesRouteImport } from './routes/(app)/policies'
 import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
 import { Route as appAiChatRouteImport } from './routes/(app)/ai-chat'
 import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
-import { Route as appContractsCreateRouteImport } from './routes/(app)/contracts.create'
 import { Route as appContractsIdRouteImport } from './routes/(app)/contracts.$id'
+import { Route as appContractsCreateIndexRouteImport } from './routes/(app)/contracts.create.index'
+import { Route as appContractsCreateWriteRouteImport } from './routes/(app)/contracts.create.write'
+import { Route as appContractsCreateUploadRouteImport } from './routes/(app)/contracts.create.upload'
 
 const NotFoundRoute = NotFoundRouteImport.update({
   id: '/not-found',
@@ -65,16 +67,27 @@ const appContractsIndexRoute = appContractsIndexRouteImport.update({
   path: '/contracts/',
   getParentRoute: () => appRouteRoute,
 } as any)
-const appContractsCreateRoute = appContractsCreateRouteImport.update({
-  id: '/contracts/create',
-  path: '/contracts/create',
-  getParentRoute: () => appRouteRoute,
-} as any)
 const appContractsIdRoute = appContractsIdRouteImport.update({
   id: '/contracts/$id',
   path: '/contracts/$id',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appContractsCreateIndexRoute = appContractsCreateIndexRouteImport.update({
+  id: '/contracts/create/',
+  path: '/contracts/create/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContractsCreateWriteRoute = appContractsCreateWriteRouteImport.update({
+  id: '/contracts/create/write',
+  path: '/contracts/create/write',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContractsCreateUploadRoute =
+  appContractsCreateUploadRouteImport.update({
+    id: '/contracts/create/upload',
+    path: '/contracts/create/upload',
+    getParentRoute: () => appRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -85,8 +98,10 @@ export interface FileRoutesByFullPath {
   '/profile': typeof appProfileRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
-  '/contracts/create': typeof appContractsCreateRoute
   '/contracts': typeof appContractsIndexRoute
+  '/contracts/create/upload': typeof appContractsCreateUploadRoute
+  '/contracts/create/write': typeof appContractsCreateWriteRoute
+  '/contracts/create': typeof appContractsCreateIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -97,8 +112,10 @@ export interface FileRoutesByTo {
   '/profile': typeof appProfileRoute
   '/settings': typeof appSettingsRoute
   '/contracts/$id': typeof appContractsIdRoute
-  '/contracts/create': typeof appContractsCreateRoute
   '/contracts': typeof appContractsIndexRoute
+  '/contracts/create/upload': typeof appContractsCreateUploadRoute
+  '/contracts/create/write': typeof appContractsCreateWriteRoute
+  '/contracts/create': typeof appContractsCreateIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -111,8 +128,10 @@ export interface FileRoutesById {
   '/(app)/profile': typeof appProfileRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/contracts/$id': typeof appContractsIdRoute
-  '/(app)/contracts/create': typeof appContractsCreateRoute
   '/(app)/contracts/': typeof appContractsIndexRoute
+  '/(app)/contracts/create/upload': typeof appContractsCreateUploadRoute
+  '/(app)/contracts/create/write': typeof appContractsCreateWriteRoute
+  '/(app)/contracts/create/': typeof appContractsCreateIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -125,8 +144,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/contracts/$id'
-    | '/contracts/create'
     | '/contracts'
+    | '/contracts/create/upload'
+    | '/contracts/create/write'
+    | '/contracts/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -137,8 +158,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/contracts/$id'
-    | '/contracts/create'
     | '/contracts'
+    | '/contracts/create/upload'
+    | '/contracts/create/write'
+    | '/contracts/create'
   id:
     | '__root__'
     | '/'
@@ -150,8 +173,10 @@ export interface FileRouteTypes {
     | '/(app)/profile'
     | '/(app)/settings'
     | '/(app)/contracts/$id'
-    | '/(app)/contracts/create'
     | '/(app)/contracts/'
+    | '/(app)/contracts/create/upload'
+    | '/(app)/contracts/create/write'
+    | '/(app)/contracts/create/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -225,18 +250,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appContractsIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
-    '/(app)/contracts/create': {
-      id: '/(app)/contracts/create'
-      path: '/contracts/create'
-      fullPath: '/contracts/create'
-      preLoaderRoute: typeof appContractsCreateRouteImport
-      parentRoute: typeof appRouteRoute
-    }
     '/(app)/contracts/$id': {
       id: '/(app)/contracts/$id'
       path: '/contracts/$id'
       fullPath: '/contracts/$id'
       preLoaderRoute: typeof appContractsIdRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/create/': {
+      id: '/(app)/contracts/create/'
+      path: '/contracts/create'
+      fullPath: '/contracts/create'
+      preLoaderRoute: typeof appContractsCreateIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/create/write': {
+      id: '/(app)/contracts/create/write'
+      path: '/contracts/create/write'
+      fullPath: '/contracts/create/write'
+      preLoaderRoute: typeof appContractsCreateWriteRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/create/upload': {
+      id: '/(app)/contracts/create/upload'
+      path: '/contracts/create/upload'
+      fullPath: '/contracts/create/upload'
+      preLoaderRoute: typeof appContractsCreateUploadRouteImport
       parentRoute: typeof appRouteRoute
     }
   }
@@ -249,8 +288,10 @@ interface appRouteRouteChildren {
   appProfileRoute: typeof appProfileRoute
   appSettingsRoute: typeof appSettingsRoute
   appContractsIdRoute: typeof appContractsIdRoute
-  appContractsCreateRoute: typeof appContractsCreateRoute
   appContractsIndexRoute: typeof appContractsIndexRoute
+  appContractsCreateUploadRoute: typeof appContractsCreateUploadRoute
+  appContractsCreateWriteRoute: typeof appContractsCreateWriteRoute
+  appContractsCreateIndexRoute: typeof appContractsCreateIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
@@ -260,8 +301,10 @@ const appRouteRouteChildren: appRouteRouteChildren = {
   appProfileRoute: appProfileRoute,
   appSettingsRoute: appSettingsRoute,
   appContractsIdRoute: appContractsIdRoute,
-  appContractsCreateRoute: appContractsCreateRoute,
   appContractsIndexRoute: appContractsIndexRoute,
+  appContractsCreateUploadRoute: appContractsCreateUploadRoute,
+  appContractsCreateWriteRoute: appContractsCreateWriteRoute,
+  appContractsCreateIndexRoute: appContractsCreateIndexRoute,
 }
 
 const appRouteRouteWithChildren = appRouteRoute._addFileChildren(

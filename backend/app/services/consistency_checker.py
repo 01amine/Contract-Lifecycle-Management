@@ -86,7 +86,7 @@ from app.models.documentUploaded import clause
 def check_compliance(
     clauses: List[ClauseWithCompliance],
     contract_id: str,
-    collection_name: str = "company_policies"
+    collection_name: str = "company_policies",
 ) -> ComplianceCheckResult:
     """
     Check contract clauses for compliance against company policies.
