@@ -22,7 +22,6 @@ from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
 from app.models.documentUploaded import ContractDocument
 from app.services.extractor import DocumentExtractor
-from app.services.llm_client import LLMSuggestion, LLMVerdict, LLMWorker
 from app.services.rule_engine import RuleEngineService
 from app.services.segmenter import Clause_cl, ClauseSegmenter
 from agno.os import AgentOS

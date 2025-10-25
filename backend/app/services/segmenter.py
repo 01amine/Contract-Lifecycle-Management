@@ -44,14 +44,18 @@ class ClauseSegmenter:
         if not raw_text:
             return []
 
-        lines = raw_text.split('\n')
-        clauses = []
-        current_clause_lines = []
-        current_id = "preamble"
-        current_level = 0
-        current_heading = None
-        start_pos = 0
-        current_pos = 0
+        try:
+            # 1. Use LLM to get structured segmentation (now an async call)
+            clause_list_pydantic: LLMClauseListDTO = await self.llm_client.segment_document_structured(raw_text)
+
+            # 2. Map the structured Pydantic output back to the existing dataclass
+            # and calculate the start_pos based on the raw text.
+            clauses = []
+            current_pos = 0 # Track position to find clauses in order
+
+            for llm_clause in clause_list_pydantic.clauses:
+                # Find the starting position of the clause text in the raw document.
+                start_index = raw_text.find(llm_clause.text.strip(), current_pos)
 
         for line in lines:
             line_length = len(line) + 1
@@ -99,7 +103,6 @@ class ClauseSegmenter:
         clauses = self._split_long_clauses(clauses)
 
         clauses = self._merge_short_fragments(clauses)
-
         return clauses
 
     def segment_text_with_llm(self, raw_text: str) -> List[Clause_cl]:
@@ -203,9 +206,11 @@ class ClauseSegmenter:
         if not clauses:
             return []
 
+
         result = [clauses[0]]
         for clause in clauses[1:]:
             if len(clause.text) < self.min_clause_length and result:
+
 
                 prev = result[-1]
                 result[-1] = Clause_cl(
@@ -222,6 +227,7 @@ class ClauseSegmenter:
     def get_clause_statistics(self, clauses: List[Clause_cl]) -> Dict:
         if not clauses:
             return {}
+
 
         return {
             "total_clauses": len(clauses),

@@ -29,11 +29,10 @@ class TemplateCreateSchema(BaseModel):
 
 
 class TemplateUpdateSchema(BaseModel):
-    name: Optional[str]
-    description: Optional[str]
-    clauses: Optional[List[ClauseSchema]]
-    status: Optional[PoStatus]
-    version: Optional[int]  
+    name: Optional[str] = None
+    description: Optional[str] = None
+    clauses: Optional[List[ClauseSchema]] = None
+    status: Optional[PoStatus] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class TemplateReadSchema(BaseModel):
