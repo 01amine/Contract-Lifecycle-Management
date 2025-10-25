@@ -31,9 +31,7 @@ export const api = {
           code: response.status,
         },
       }));
-      throw new Error(
-        error.error.message || `HTTP error! status: ${response.status}`
-      );
+      throw new Error(JSON.stringify(error));
     }
 
     return response.json();

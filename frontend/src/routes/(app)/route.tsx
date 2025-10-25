@@ -8,7 +8,7 @@ export const Route = createFileRoute("/(app)")({
 
 function RouteComponent() {
   return (
-    <div className="grid grid-cols-[auto_1fr] p-6 gap-6 h-screen overflow-hidden max-w-7xl mx-auto">
+    <div className="grid grid-cols-[auto_1fr] p-6 gap-6 h-screen overflow-hidden max-w-6xl mx-auto">
       <Navigation />
       <div className="overflow-y-auto relative pe-3">
         <Header />

@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Palette, FileText, Users, ClipboardList } from "lucide-react";
+import { Bell, Palette, Users, ClipboardList } from "lucide-react";
 import { SecuritySettings } from "@/components/settings/account/security-settings";
 import { TwoFactorAuth } from "@/components/settings/account/two-factor-auth";
 import { ThemeSelector } from "@/components/settings/preferences/theme-selector";

@@ -88,7 +88,7 @@ export default function UploadProgressSteps({
                   {isActive && (
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: 40 }}
+                      animate={{ width: 30 }}
                       className="h-1 bg-primary rounded-full mt-2 mx-auto"
                       style={{ width: `${progress}%` }}
                     />

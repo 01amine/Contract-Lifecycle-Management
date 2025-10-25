@@ -3,12 +3,19 @@ import { CheckCircle2Icon, ClipboardList, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface UploadCompleteProps {
+  contractId: string | null;
+  contractData: any;
+  clausesData: any;
+  complianceData: any;
   onViewContract?: () => void;
   onUploadAnother?: () => void;
   onGoToContracts?: () => void;
 }
 
 export default function UploadComplete({
+  contractId,
+  clausesData,
+  complianceData,
   onViewContract,
   onUploadAnother,
   onGoToContracts,
@@ -37,7 +44,7 @@ export default function UploadComplete({
           transition={{ delay: 0.2 }}
           className="text-3xl font-bold mb-2 text-green-600"
         >
-          Upload Complete!
+          Created Successfully!
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -45,9 +52,47 @@ export default function UploadComplete({
           transition={{ delay: 0.3 }}
           className="text-muted-foreground mb-8"
         >
-          Your contract has been successfully processed and stored securely on
-          the blockchain.
+          Your contract has been successfully processed and analyzed.
         </motion.p>
+
+        {/* Quick Stats */}
+        {(clausesData || complianceData) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mb-8 grid grid-cols-2 gap-4"
+          >
+            {clausesData && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="text-2xl font-bold mb-1">
+                  {Array.isArray(clausesData) ? clausesData.length : 0}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Clauses Identified
+                </div>
+              </div>
+            )}
+            {complianceData?.compliance_score !== undefined && (
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <div
+                  className={`text-2xl font-bold mb-1 ${
+                    complianceData.compliance_score >= 0.9
+                      ? "text-green-600"
+                      : complianceData.compliance_score >= 0.7
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {(complianceData.compliance_score * 100).toFixed(0)}%
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Compliance Score
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -55,10 +100,10 @@ export default function UploadComplete({
           transition={{ delay: 0.4 }}
           className="flex flex-col gap-3 max-w-md mx-auto"
         >
-          {onViewContract && (
+          {onViewContract && contractId && (
             <Button onClick={onViewContract} size="lg" className="w-full">
               <ClipboardList className="size-4" />
-              View Contract
+              View Contract Details
             </Button>
           )}
           {onUploadAnother && (

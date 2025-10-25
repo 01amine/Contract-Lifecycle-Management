@@ -6,25 +6,20 @@ import {
   UploadIcon,
   CheckCircle2Icon,
   ShieldCheckIcon,
-  DatabaseIcon,
   BrainIcon,
 } from "lucide-react";
 import UploadDropzone from "@/components/upload/upload-dropzone";
-import UploadProgressSteps from "@/components/upload/upload-progress-steps";
-import UploadProcessingStage from "@/components/upload/upload-processing-stage";
-import UploadComplete from "@/components/upload/upload-complete";
+import ContractProcessingStepper from "@/components/upload/contract-processing-stepper";
+import ContractProcessingStage from "@/components/upload/contract-processing-stage";
+import ContractProcessingComplete from "@/components/upload/contract-processing-complete";
 import { Button } from "@/components/ui/button";
+import { contractActions } from "@/actions/contracts";
 
 export const Route = createFileRoute("/(app)/contracts/create/upload")({
   component: RouteComponent,
 });
 
-type UploadStep =
-  | "upload"
-  | "segmentation"
-  | "compliance"
-  | "blockchain"
-  | "complete";
+type UploadStep = "upload" | "segmentation" | "compliance" | "complete";
 
 const steps = [
   {
@@ -46,12 +41,6 @@ const steps = [
     icon: ShieldCheckIcon,
   },
   {
-    id: "blockchain",
-    label: "Blockchain",
-    title: "Blockchain Registration on Hyperledger",
-    icon: DatabaseIcon,
-  },
-  {
     id: "complete",
     label: "Completion",
     title: null,
@@ -66,6 +55,10 @@ function RouteComponent() {
   const [progress, setProgress] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [contractId, setContractId] = useState<string | null>(null);
+  const [contractData, setContractData] = useState<any>(null);
+  const [clausesData, setClausesData] = useState<any>(null);
+  const [complianceData, setComplianceData] = useState<any>(null);
 
   // Update header based on current step
   const currentStepLabel = steps.find((s) => s.id === currentStep)?.title;
@@ -97,53 +90,64 @@ function RouteComponent() {
     setError(null);
 
     try {
-      // Step 1: Analyzing
+      // Step 1: Upload the file
       setCurrentStep("segmentation");
-      setProgress(0);
+      setProgress(20);
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const formData = new FormData();
+      formData.append("file", files[0]);
 
-      // Simulate analysis progress
-      for (let i = 0; i <= 100; i += 6) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 300 * Math.random() + 50)
+      const uploadedContract = await contractActions.uploadContract(formData);
+      console.log("Upload response:", uploadedContract);
+
+      const contractId = uploadedContract._id || null;
+
+      if (!contractId) {
+        throw new Error(
+          "No contract ID returned from server. Response: " +
+            JSON.stringify(uploadedContract)
         );
-        setProgress(i);
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      setContractId(contractId);
+      setContractData(uploadedContract);
+      setProgress(30);
 
-      // Step 2: Compliance Check
+      // Step 2: Extract clauses
+      setProgress(50);
+      const clauses = await contractActions.extractClauses(contractId);
+      console.log("Clauses response:", clauses);
+      setClausesData(clauses);
+      setProgress(100);
+
+      // Wait a bit before moving to compliance
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Step 3: Compliance Check
       setCurrentStep("compliance");
       setProgress(0);
+      setProgress(30);
 
-      for (let i = 0; i <= 100; i += 4) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 200 * Math.random() + 50)
-        );
-        setProgress(i);
-      }
+      const complianceResult = await contractActions.complianceCheck(
+        contractId
+      );
+      console.log("Compliance response:", complianceResult);
+      setComplianceData(complianceResult);
+      setProgress(100);
 
-      await new Promise((resolve) => setTimeout(resolve, 700));
-
-      // Step 3: Blockchain
-      setCurrentStep("blockchain");
-      setProgress(0);
-
-      for (let i = 0; i <= 100; i += 6) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 200 * Math.random() + 50)
-        );
-        setProgress(i);
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      // Wait a bit before showing complete
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 4: Complete
       setCurrentStep("complete");
       setProgress(100);
     } catch (err) {
-      setError("An error occurred during upload. Please try again.");
+      console.error("Upload error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred during upload. Please try again."
+      );
       setCurrentStep("upload");
       setProgress(0);
     }
@@ -154,7 +158,7 @@ function RouteComponent() {
       {/* Progress Steps */}
       <AnimatePresence mode="wait">
         {currentStep !== "upload" && (
-          <UploadProgressSteps
+          <ContractProcessingStepper
             steps={steps}
             currentStep={currentStep}
             progress={progress}
@@ -200,7 +204,7 @@ function RouteComponent() {
         )}
 
         {currentStep === "segmentation" && (
-          <UploadProcessingStage
+          <ContractProcessingStage
             key="segmentation"
             icon={BrainIcon}
             title="Segmenting Contract and reading clauses"
@@ -211,35 +215,34 @@ function RouteComponent() {
         )}
 
         {currentStep === "compliance" && (
-          <UploadProcessingStage
+          <ContractProcessingStage
             key="compliance"
             icon={ShieldCheckIcon}
             title="Compliance Check"
-            description="Verifying legal and Shariah compliance..."
+            description="Verifying legal and Policy compliance..."
             progress={progress}
             animationType="scale"
           />
         )}
 
-        {currentStep === "blockchain" && (
-          <UploadProcessingStage
-            key="blockchain"
-            icon={DatabaseIcon}
-            title="Blockchain Registration"
-            description="Creating immutable proof on Hyperledger network..."
-            progress={progress}
-            animationType="float"
-          />
-        )}
-
         {currentStep === "complete" && (
-          <UploadComplete
+          <ContractProcessingComplete
             key="complete"
-            onViewContract={() => navigate({ to: "/contracts" })}
+            contractId={contractId}
+            contractData={contractData}
+            clausesData={clausesData}
+            complianceData={complianceData}
+            onViewContract={() =>
+              contractId && navigate({ to: `/contracts/${contractId}` })
+            }
             onUploadAnother={() => {
               setCurrentStep("upload");
               setSelectedFiles([]);
               setProgress(0);
+              setContractId(null);
+              setContractData(null);
+              setClausesData(null);
+              setComplianceData(null);
             }}
             onGoToContracts={() => navigate({ to: "/contracts" })}
           />

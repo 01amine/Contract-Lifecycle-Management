@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-from beanie import Document
+from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
 
 
@@ -31,3 +31,12 @@ class ContractDocument(Document):
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     version: int = 1
     last_updated: datetime = Field(default_factory=datetime.utcnow)
+    
+    class Settings:
+        name = "contracts"
+        
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+        populate_by_name = True

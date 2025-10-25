@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef } from "react";
 
 interface Tab {
   id: string;
@@ -83,13 +84,23 @@ interface TabContentProps {
 }
 
 export function TabContent({ value, activeTab, children }: TabContentProps) {
+  const hasChangedRef = useRef(false);
+  const prevActiveTabRef = useRef(activeTab);
+
+  useEffect(() => {
+    if (prevActiveTabRef.current !== activeTab) {
+      hasChangedRef.current = true;
+      prevActiveTabRef.current = activeTab;
+    }
+  }, [activeTab]);
+
   return (
     <div className="overflow-x-hidden overflow-y-visible">
       <AnimatePresence mode="popLayout">
         {value === activeTab && (
           <motion.div
             key={value}
-            initial={{ opacity: 0, x: 600 }}
+            initial={hasChangedRef.current ? { opacity: 0, x: 600 } : false}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -600 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
