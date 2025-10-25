@@ -12,16 +12,22 @@ class ContractStatus(str, Enum):
     REJECTED = "rejected"
     SIGNED = "signed"
 
+
 class clause(BaseModel):
-    title :Optional[str] = None
-    content:Optional[str] = None
+    clause_id: str
+    text: str
+    heading: Optional[str] = None
+    level: int
+    start_pos: int
+
+
 class ContractDocument(Document):
-    file_name: str                     
-    file_id: str 
-    clauses: Optional[list[clause]] = None                     
-    content: Optional[str] = None      
-    status: ContractStatus = ContractStatus.DRAFT 
+    file_name: str
+    file_id: str
+    clauses: Optional[list[clause]] = None
+    content: Optional[str] = None
+    status: ContractStatus = ContractStatus.DRAFT
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow) 
-    version: int = 1               
+    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    version: int = 1
     last_updated: datetime = Field(default_factory=datetime.utcnow)

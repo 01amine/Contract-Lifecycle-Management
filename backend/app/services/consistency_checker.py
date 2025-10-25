@@ -1,5 +1,6 @@
 
 from typing import List, Optional
+from models.documentUploaded import clause
 from pydantic import BaseModel, Field
 from agno.agent import Agent
 from agno.models.google import Gemini
@@ -127,22 +128,18 @@ def check_compliance(
 
 
 
-def convert_clauses_for_compliance(clauses_data: List[dict]) -> List[ClauseWithCompliance]:
+def convert_clauses_for_compliance(clauses_data: List[clause]) -> List[ClauseWithCompliance]:
     """
-    Convert stored clause dicts to ClauseWithCompliance objects.
-    
-    Args:
-        clauses_data: List of clause dictionaries from MongoDB
-        
-    Returns:
-        List of ClauseWithCompliance objects
+    Convert stored Pydantic clause objects (from ContractDocument) 
+    to ClauseWithCompliance objects (for the compliance agent).
     """
     return [
         ClauseWithCompliance(
-            clause_id=c["clause_id"],
-            text=c["text"],
-            heading=c.get("heading"),
-            level=c["level"]
+            clause_id=c.clause_id, # CORRECTED: Use dot notation
+            text=c.text,           # CORRECTED: Use dot notation
+            heading=c.heading,     # CORRECTED: Use dot notation
+            level=c.level          # CORRECTED: Use dot notation
         )
-        for c in clauses_data
+        # c is a Pydantic object instance, not a dictionary.
+        for c in clauses_data 
     ]
