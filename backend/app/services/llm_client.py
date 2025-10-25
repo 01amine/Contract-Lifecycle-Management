@@ -1,16 +1,6 @@
-import os
 import re
-from typing import List, Optional, Tuple, Any, Dict
+from typing import List, Optional, Tuple, Callable, Awaitable
 from dataclasses import dataclass, field
-from google import genai
-from google.generativeai import types
-from app.config import get_config, Config
-from app.dto.risk import ClassifiedClause
-from app.services.embedding import TextDocumentProcessor
-from app.dto.policy import ClauseResponse
-
-
-
 
 
 @dataclass
@@ -20,7 +10,7 @@ class LLMSuggestion:
     detail: str
     priority: str  # 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'
     target_text: Optional[str] = None
-    recommended_text: Optional[str] = None  # Suggested replacement
+    recommended_text: Optional[str] = None
 
 
 @dataclass
@@ -31,25 +21,64 @@ class LLMVerdict:
     llm_verdict_score: float  # 0.0 to 1.0
     suggestions: List[LLMSuggestion] = field(default_factory=list)
     comparison_summary: str = ""
-    non_standard_terms: List[str] = field(default_factory=list)  # Specific problematic terms
-    compliance_issues: List[str] = field(default_factory=list)  # Legal/regulatory concerns
-    missing_elements: List[str] = field(default_factory=list)  # What's missing compared to templates
-    matched_template_id: Optional[str] = None  # Best matching template
-    deviation_score: float = 0.0  # How much it deviates from templates (0-1)
+    non_standard_terms: List[str] = field(default_factory=list)
+    compliance_issues: List[str] = field(default_factory=list)
+    missing_elements: List[str] = field(default_factory=list)
+    matched_template_id: Optional[str] = None
+    deviation_score: float = 0.0
+
+
+@dataclass
+class ClassifiedClause:
+    """Input clause data structure."""
+    clause_id: str
+    text: str
+    clause_type: str
+    confidence_score: float
+    risk_score: float
+    risk_summary: str
+    context_flags: List[str] = field(default_factory=list)
+    matched_keywords: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ClauseResponse:
+    """Template clause from retrieval system."""
+    template_id: str
+    policy_type: str
+    country: str
+    version: str
+    title: str
+    text: str
+    score: float
+
+
+@dataclass
+class LLMConfig:
+    """Configuration for LLM generation."""
+    temperature: float = 0.3
+    max_output_tokens: int = 2048
+    top_p: float = 0.95
+    top_k: int = 40
 
 
 class LLMWorker:
     """
     Enhanced LLM worker with comprehensive RAG-based risk and compliance analysis.
+    All external dependencies are passed as parameters.
     """
     
-    def __init__(self, config: Config):
-        self.config = config.llm
-        self.client: genai.Client = self._initialize_client()
-        self.model_name = self.config.gemini_model
+    def __init__(
+        self,
+        standard_requirements: Optional[dict] = None
+    ):
+        """
+        Initialize LLM worker.
         
-        # Standard clause requirements by type
-        self.standard_requirements = {
+        Args:
+            standard_requirements: Dict mapping clause types to required elements
+        """
+        self.standard_requirements = standard_requirements or {
             "LIABILITY": ["limitation amount", "exclusion list", "mutual protection"],
             "INDEMNITY": ["scope definition", "defense obligation", "notice requirement"],
             "TERMINATION": ["notice period", "cure period", "termination consequences"],
@@ -59,12 +88,6 @@ class LLMWorker:
             "DATA_PRIVACY": ["GDPR compliance", "data processing terms", "breach notification"],
             "WARRANTIES": ["scope of warranty", "disclaimer", "remedy"],
         }
-        
-    def _initialize_client(self) -> genai.Client:
-        """Initializes the Gemini client."""
-        if not self.config.gemini_api_key:
-            raise ValueError("GEMINI_API_KEY is not configured.")
-        return genai.Client(api_key=self.config.gemini_api_key)
 
     def _format_context(self, retrieved_clauses: List[ClauseResponse]) -> str:
         """Formats retrieved template clauses with relevance scores."""
@@ -307,32 +330,35 @@ Now analyze the CURRENT CLAUSE and provide your structured response."""
         self, 
         clause: ClassifiedClause, 
         retrieved_clauses: List[ClauseResponse],
-        all_clause_types: List[str]
+        all_clause_types: List[str],
+        llm_generate_fn: Callable[[str, LLMConfig], Awaitable[str]],
+        llm_config: LLMConfig
     ) -> LLMVerdict:
         """
         Performs comprehensive RAG-based analysis of a single clause.
+        
+        Args:
+            clause: The classified clause to analyze
+            retrieved_clauses: Similar template clauses from RAG retrieval
+            all_clause_types: List of all clause types in the contract
+            llm_generate_fn: Async function that takes (prompt, config) and returns LLM response text
+            llm_config: Configuration for LLM generation
+            
+        Returns:
+            LLMVerdict with comprehensive analysis
         """
         
         context_str = self._format_context(retrieved_clauses)
         prompt = self._build_enhanced_prompt(clause, context_str, all_clause_types)
         
         try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=self.config.temperature,
-                    max_output_tokens=self.config.max_output_tokens,
-                    top_p=self.config.top_p,
-                    top_k=self.config.top_k,
-                ),
-            )
+            response_text = await llm_generate_fn(prompt, llm_config)
             
             (
                 analysis, score, suggestions, comparison,
                 non_standard_terms, compliance_issues, missing_elements,
                 matched_template, deviation_score
-            ) = self._parse_llm_response(response.text)
+            ) = self._parse_llm_response(response_text)
             
             return LLMVerdict(
                 clause_id=clause.clause_id,
@@ -364,24 +390,57 @@ Now analyze the CURRENT CLAUSE and provide your structured response."""
 
 
 async def llm_worker(
-    classified_clauses: List[ClassifiedClause], 
-    top_k_retrieval: int = 3
+    classified_clauses: List[ClassifiedClause],
+    retrieval_fn: Callable[[str, int], Awaitable[List[ClauseResponse]]],
+    llm_generate_fn: Callable[[str, LLMConfig], Awaitable[str]],
+    llm_config: LLMConfig,
+    standard_requirements: Optional[dict] = None,
+    top_k_retrieval: int = 3,
+    verbose: bool = True
 ) -> List[LLMVerdict]:
     """
     Main worker function for LLM-based risk and compliance analysis.
     
     Args:
-        classified_clauses: List of clauses from classifier_worker
+        classified_clauses: List of clauses from classifier
+        retrieval_fn: Async function that takes (document_text, top_k) and returns similar clauses
+        llm_generate_fn: Async function that takes (prompt, config) and returns LLM response text
+        llm_config: Configuration for LLM generation
+        standard_requirements: Optional dict of standard requirements by clause type
         top_k_retrieval: Number of similar templates to retrieve for RAG context
+        verbose: Whether to print progress logs
         
     Returns:
         List of LLMVerdict objects with comprehensive analysis
+        
+    Example usage:
+        ```python
+        # Define your LLM generation function
+        async def my_llm_generate(prompt: str, config: LLMConfig) -> str:
+            # Call your LLM API here
+            response = await gemini_client.generate(prompt, temperature=config.temperature)
+            return response.text
+        
+        # Define your retrieval function
+        async def my_retrieval(text: str, top_k: int) -> List[ClauseResponse]:
+            # Call your vector DB here
+            results = await vector_db.search(text, limit=top_k)
+            return results
+        
+        # Run analysis
+        verdicts = await llm_worker(
+            classified_clauses=clauses,
+            retrieval_fn=my_retrieval,
+            llm_generate_fn=my_llm_generate,
+            llm_config=LLMConfig(temperature=0.3, max_output_tokens=2048)
+        )
+        ```
     """
-    print(f"[LLM WORKER] Starting analysis for {len(classified_clauses)} clauses...")
+    if verbose:
+        print(f"[LLM WORKER] Starting analysis for {len(classified_clauses)} clauses...")
     
     try:
-        config = get_config()
-        llm_service = LLMWorker(config)
+        llm_service = LLMWorker(standard_requirements=standard_requirements)
         
         # Extract all clause types for context
         all_clause_types = list(set(c.clause_type for c in classified_clauses))
@@ -389,46 +448,52 @@ async def llm_worker(
         results: List[LLMVerdict] = []
         
         for idx, clause in enumerate(classified_clauses):
-            print(f"[LLM WORKER] Processing clause {idx+1}/{len(classified_clauses)}: {clause.clause_id}")
+            if verbose:
+                print(f"[LLM WORKER] Processing clause {idx+1}/{len(classified_clauses)}: {clause.clause_id}")
             
             # RAG: Retrieve similar template clauses
-            retrieval_response = await TextDocumentProcessor.retrieve_policies(
-                document_text=clause.text,
-                top_k=top_k_retrieval
-            )
-            
-            retrieved_clauses = retrieval_response.data if retrieval_response.success else []
-            
-            if not retrieval_response.success:
-                print(f"[WARNING] Template retrieval failed for {clause.clause_id}: {retrieval_response.message}")
-            else:
-                print(f"[LLM WORKER] Retrieved {len(retrieved_clauses)} similar templates")
+            try:
+                retrieved_clauses = await retrieval_fn(clause.text, top_k_retrieval)
+                if verbose:
+                    print(f"[LLM WORKER] Retrieved {len(retrieved_clauses)} similar templates")
+            except Exception as e:
+                if verbose:
+                    print(f"[WARNING] Template retrieval failed for {clause.clause_id}: {e}")
+                retrieved_clauses = []
             
             # LLM Analysis
-            verdict = await llm_service.analyze_clause(clause, retrieved_clauses, all_clause_types)
+            verdict = await llm_service.analyze_clause(
+                clause, 
+                retrieved_clauses, 
+                all_clause_types,
+                llm_generate_fn,
+                llm_config
+            )
             results.append(verdict)
             
             # Log high-risk findings
-            if verdict.llm_verdict_score > 0.7:
+            if verbose and verdict.llm_verdict_score > 0.7:
                 print(f"[ALERT] High-risk clause detected: {clause.clause_id} (Score: {verdict.llm_verdict_score:.2f})")
         
         # Summary statistics
-        high_risk_count = sum(1 for v in results if v.llm_verdict_score > 0.7)
-        critical_suggestions = sum(
-            1 for v in results 
-            for s in v.suggestions 
-            if s.priority == "CRITICAL"
-        )
-        
-        print(f"[LLM WORKER] Analysis complete:")
-        print(f"  - High-risk clauses: {high_risk_count}")
-        print(f"  - Critical suggestions: {critical_suggestions}")
-        print(f"  - Total compliance issues: {sum(len(v.compliance_issues) for v in results)}")
+        if verbose:
+            high_risk_count = sum(1 for v in results if v.llm_verdict_score > 0.7)
+            critical_suggestions = sum(
+                1 for v in results 
+                for s in v.suggestions 
+                if s.priority == "CRITICAL"
+            )
+            
+            print(f"[LLM WORKER] Analysis complete:")
+            print(f"  - High-risk clauses: {high_risk_count}")
+            print(f"  - Critical suggestions: {critical_suggestions}")
+            print(f"  - Total compliance issues: {sum(len(v.compliance_issues) for v in results)}")
         
         return results
     
     except Exception as e:
-        print(f"[CRITICAL] LLM worker failure: {e}")
-        import traceback
-        traceback.print_exc()
+        if verbose:
+            print(f"[CRITICAL] LLM worker failure: {e}")
+            import traceback
+            traceback.print_exc()
         return []
