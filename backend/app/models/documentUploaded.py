@@ -13,8 +13,8 @@ class ContractStatus(str, Enum):
     SIGNED = "signed"
 
 class clause(BaseModel):
-    title :str
-    content:str
+    title :Optional[str] = None
+    content:Optional[str] = None
 class ContractDocument(Document):
     file_name: str                     
     file_id: str 
