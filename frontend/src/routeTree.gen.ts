@@ -9,38 +9,141 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as appSettingsRouteImport } from './routes/(app)/settings'
+import { Route as appRegulationsRouteImport } from './routes/(app)/regulations'
+import { Route as appProfileRouteImport } from './routes/(app)/profile'
+import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
+import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
+import { Route as appContractsCreateRouteImport } from './routes/(app)/contracts.create'
+import { Route as appContractsIdRouteImport } from './routes/(app)/contracts.$id'
 
+const appRouteRoute = appRouteRouteImport.update({
+  id: '/(app)',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const appSettingsRoute = appSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appRegulationsRoute = appRegulationsRouteImport.update({
+  id: '/regulations',
+  path: '/regulations',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appProfileRoute = appProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appDashboardRoute = appDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContractsIndexRoute = appContractsIndexRouteImport.update({
+  id: '/contracts/',
+  path: '/contracts/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContractsCreateRoute = appContractsCreateRouteImport.update({
+  id: '/contracts/create',
+  path: '/contracts/create',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContractsIdRoute = appContractsIdRouteImport.update({
+  id: '/contracts/$id',
+  path: '/contracts/$id',
+  getParentRoute: () => appRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof appDashboardRoute
+  '/profile': typeof appProfileRoute
+  '/regulations': typeof appRegulationsRoute
+  '/settings': typeof appSettingsRoute
+  '/contracts/$id': typeof appContractsIdRoute
+  '/contracts/create': typeof appContractsCreateRoute
+  '/contracts': typeof appContractsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof appDashboardRoute
+  '/profile': typeof appProfileRoute
+  '/regulations': typeof appRegulationsRoute
+  '/settings': typeof appSettingsRoute
+  '/contracts/$id': typeof appContractsIdRoute
+  '/contracts/create': typeof appContractsCreateRoute
+  '/contracts': typeof appContractsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/(app)': typeof appRouteRouteWithChildren
+  '/(app)/dashboard': typeof appDashboardRoute
+  '/(app)/profile': typeof appProfileRoute
+  '/(app)/regulations': typeof appRegulationsRoute
+  '/(app)/settings': typeof appSettingsRoute
+  '/(app)/contracts/$id': typeof appContractsIdRoute
+  '/(app)/contracts/create': typeof appContractsCreateRoute
+  '/(app)/contracts/': typeof appContractsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/profile'
+    | '/regulations'
+    | '/settings'
+    | '/contracts/$id'
+    | '/contracts/create'
+    | '/contracts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/profile'
+    | '/regulations'
+    | '/settings'
+    | '/contracts/$id'
+    | '/contracts/create'
+    | '/contracts'
+  id:
+    | '__root__'
+    | '/'
+    | '/(app)'
+    | '/(app)/dashboard'
+    | '/(app)/profile'
+    | '/(app)/regulations'
+    | '/(app)/settings'
+    | '/(app)/contracts/$id'
+    | '/(app)/contracts/create'
+    | '/(app)/contracts/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  appRouteRoute: typeof appRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/(app)': {
+      id: '/(app)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof appRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +151,85 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(app)/settings': {
+      id: '/(app)/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof appSettingsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/regulations': {
+      id: '/(app)/regulations'
+      path: '/regulations'
+      fullPath: '/regulations'
+      preLoaderRoute: typeof appRegulationsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/profile': {
+      id: '/(app)/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof appProfileRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/dashboard': {
+      id: '/(app)/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof appDashboardRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/': {
+      id: '/(app)/contracts/'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof appContractsIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/create': {
+      id: '/(app)/contracts/create'
+      path: '/contracts/create'
+      fullPath: '/contracts/create'
+      preLoaderRoute: typeof appContractsCreateRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contracts/$id': {
+      id: '/(app)/contracts/$id'
+      path: '/contracts/$id'
+      fullPath: '/contracts/$id'
+      preLoaderRoute: typeof appContractsIdRouteImport
+      parentRoute: typeof appRouteRoute
+    }
   }
 }
 
+interface appRouteRouteChildren {
+  appDashboardRoute: typeof appDashboardRoute
+  appProfileRoute: typeof appProfileRoute
+  appRegulationsRoute: typeof appRegulationsRoute
+  appSettingsRoute: typeof appSettingsRoute
+  appContractsIdRoute: typeof appContractsIdRoute
+  appContractsCreateRoute: typeof appContractsCreateRoute
+  appContractsIndexRoute: typeof appContractsIndexRoute
+}
+
+const appRouteRouteChildren: appRouteRouteChildren = {
+  appDashboardRoute: appDashboardRoute,
+  appProfileRoute: appProfileRoute,
+  appRegulationsRoute: appRegulationsRoute,
+  appSettingsRoute: appSettingsRoute,
+  appContractsIdRoute: appContractsIdRoute,
+  appContractsCreateRoute: appContractsCreateRoute,
+  appContractsIndexRoute: appContractsIndexRoute,
+}
+
+const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
+  appRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  appRouteRoute: appRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
