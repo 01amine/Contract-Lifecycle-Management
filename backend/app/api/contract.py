@@ -13,7 +13,7 @@ from app.repositories.contract import ContractRepository
 from app.services.agent import agent
 from app.services.segmenter import  extract_clauses
 from app.services.consistency_checker import check_compliance, convert_clauses_for_compliance
-from app.services.compliance_with_prompt import check_compliance_pompt
+from app.services.compliance_with_prompt import modify_contract_text
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -234,21 +234,18 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
         
 
 @router.post("/compliance-check-plus-prompt")
-async def compliance_check_endpoint(content: str = Body(...),user_prompt: str = Body(...)): 
+async def compliance_check_endpoint(
+    content: str = Body(..., description="The full contract text to be modified."),
+    user_prompt: str = Body(..., description="The instruction for the agent to modify the text.")
+): 
     
-        result = check_compliance_pompt(
-            clauses=content,
-            collection_name="company_policies",
-            user_prompt=user_prompt
-        )
-        
-        risks = [risk.model_dump() for risk in result.risks]
-        compliance_score = result.compliance_score
-        
-        return {
-            "risks": risks,
-            "compliance_score": compliance_score
-        }
+    modified_text = modify_contract_text( 
+        clauses=content,
+        collection_name="company_policies",
+        user_prompt=user_prompt
+    )
+    
+    return modified_text
         
 @router.get("/{contract_id}", response_model=ContractDocument)
 async def get_contract(contract_id: PydanticObjectId):
