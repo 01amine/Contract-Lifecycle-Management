@@ -1,11 +1,11 @@
-from dto.policy import ClauseResponse
-from dto.risk import ClassifiedClause
+from app.dto.policy import ClauseResponse
+from app.dto.risk import ClassifiedClause
 from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from qdrant_client import AsyncQdrantClient
-from app.config import LLMConfig, settings
+from app.config import LLMConfig, settings  
 from pymongo import AsyncMongoClient
 from beanie import init_beanie
 from app.minio import init_minio_client
@@ -32,17 +32,18 @@ mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_DB]
 
 
-def init_classes():
-    DocumentExtractor()
-    Clause_cl()
-    ClauseSegmenter()
-    RuleEngineService()
-    LLMSuggestion()
-    LLMVerdict()
-    ClassifiedClause()
-    ClauseResponse()
-    LLMConfig()
-    LLMWorker()
+# def init_classes():
+#     DocumentExtractor()
+#     Clause_cl()
+#     ClauseSegmenter()
+#     RuleEngineService()
+#     LLMSuggestion()
+#     LLMVerdict()
+#     ClassifiedClause()
+#     ClauseResponse()
+#     LLMConfig()
+#     LLMWorker()
+    
     
     
     
