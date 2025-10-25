@@ -2,7 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupTextarea,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -447,15 +451,21 @@ export function PolicyForm({
 
           <div>
             <Label className="mb-2 block">Description *</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter policy description..."
-              className="bg-muted!"
-              rows={3}
-              disabled={isLoading}
-              required
-            />
+            <InputGroup className="bg-muted!">
+              <InputGroupTextarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter policy description..."
+                rows={3}
+                disabled={isLoading}
+                required
+              />
+              <InputGroupAddon align="block-end">
+                <span className="text-xs text-muted-foreground whitespace-nowrap ms-auto">
+                  {description.trim().split(/\s+/).filter(Boolean).length} words
+                </span>
+              </InputGroupAddon>
+            </InputGroup>
           </div>
 
           <div>

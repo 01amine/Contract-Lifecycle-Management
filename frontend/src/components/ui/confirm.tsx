@@ -25,11 +25,11 @@ const ConfirmDialog = ({
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          handleConfirm(false);
+          handleConfirm(true);
         }
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-w-md!">
         <DialogTitle>{title}</DialogTitle>
         <p className="text-muted-foreground">{description}</p>
         <DialogFooter>

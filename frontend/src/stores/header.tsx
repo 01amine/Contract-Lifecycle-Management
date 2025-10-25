@@ -41,11 +41,13 @@ export const useHeaderStore = create<HeaderStore>((set) => ({
     }),
 }));
 
-export const useHeader = (title: Title | string, layer: number = 0) => {
+export const useHeader = (title: Title | string | null, layer: number = 0) => {
   const { setLayer, removeLayer } = useHeaderStore();
   const idRef = useRef(Math.random().toString(36).substring(2, 15));
 
   useEffect(() => {
+    if (!title) return;
+
     const normalizedTitle: Title =
       typeof title === "string" ? { type: "text", text: title } : title;
 
