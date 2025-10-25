@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import {
   contractActions,
   type ContractStatus,
@@ -21,6 +26,29 @@ export function useContracts(params?: ContractsListParams) {
   return useQuery({
     queryKey: contractKeys.list(params),
     queryFn: () => contractActions.listContracts(params),
+  });
+}
+
+// Hook to get contracts with infinite scroll
+export function useInfiniteContracts(
+  params?: Omit<ContractsListParams, "skip">
+) {
+  const LIMIT = 20;
+
+  return useInfiniteQuery({
+    queryKey: [...contractKeys.lists(), "infinite", params],
+    queryFn: ({ pageParam = 0 }) =>
+      contractActions.listContracts({
+        ...params,
+        skip: pageParam,
+        limit: LIMIT,
+        sort_by: "created_at",
+        sort_order: "desc",
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === LIMIT ? allPages.length * LIMIT : undefined;
+    },
   });
 }
 
@@ -117,6 +145,47 @@ export function useComplianceCheck() {
     onSuccess: (_, id) => {
       // Invalidate the specific contract to refetch with compliance data
       queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) });
+    },
+  });
+}
+
+// Hook to update contract (content, name, and/or category)
+export function useUpdateContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        content?: string;
+        name?: string;
+        category?: string;
+      };
+    }) => contractActions.updateContract(id, data),
+    onSuccess: (_, { id }) => {
+      // Invalidate the specific contract (which includes clauses data)
+      queryClient.invalidateQueries({
+        queryKey: contractKeys.detail(id),
+      });
+      // Invalidate contract lists
+      queryClient.invalidateQueries({
+        queryKey: contractKeys.lists(),
+      });
+      // Invalidate stats
+      queryClient.invalidateQueries({
+        queryKey: contractKeys.stats(),
+      });
+      // Invalidate all queries containing this contract's id to ensure fresh clause data
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          return query.queryKey.some(
+            (key) => typeof key === "string" && key === id
+          );
+        },
+      });
     },
   });
 }

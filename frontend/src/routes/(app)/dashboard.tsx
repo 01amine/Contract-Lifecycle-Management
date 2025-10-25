@@ -54,6 +54,7 @@ function RouteComponent() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
                 key={index}
+                className="size-full"
               >
                 <StatsCard key={index} title={item.title} value={item.value} />
               </motion.div>

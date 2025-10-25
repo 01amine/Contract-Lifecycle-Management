@@ -18,7 +18,7 @@ export function Header() {
             {title.back}
           </Link>
         ) : (
-          <h1 className="text-xl font-semibold text-primary mb-1">
+          <h1 className="text-xl font-title font-bold text-primary mb-1">
             {title.text}
           </h1>
         )}

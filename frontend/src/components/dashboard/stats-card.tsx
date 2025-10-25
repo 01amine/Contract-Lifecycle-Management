@@ -8,7 +8,7 @@ interface StatsCardProps {
 
 export function StatsCard({ title, value }: StatsCardProps) {
   return (
-    <div className="p-4 pb-6 border rounded-xl shadow-island bg-card flex gap-4">
+    <div className="p-4 pb-6 border rounded-xl shadow-island bg-card flex gap-4 size-full">
       <motion.div
         whileTap={{ scale: 0.95 }}
         animate={{ scale: 1 }}

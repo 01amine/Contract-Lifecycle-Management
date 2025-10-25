@@ -128,7 +128,9 @@ export default function UploadDropzone({
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold mb-2">Drop your contract here</h2>
+            <h2 className="text-2xl font-title font-bold mb-2">
+              Drop your contract here
+            </h2>
             <p className="text-muted-foreground mb-6">
               or click to browse from your computer
             </p>

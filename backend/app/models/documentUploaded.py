@@ -24,6 +24,7 @@ class clause(BaseModel):
 class ContractDocument(Document):
     file_name: str
     file_id: str
+    category: Optional[str] = None
     clauses: Optional[list[clause]] = None
     content: Optional[str] = None
     status: ContractStatus = ContractStatus.DRAFT

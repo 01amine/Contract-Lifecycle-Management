@@ -1,6 +1,6 @@
 import { useHeader } from "@/stores/header";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
 import {
@@ -24,7 +24,9 @@ import { contractActions } from "@/actions/contracts";
 import ContractProcessingStepper from "@/components/upload/contract-processing-stepper";
 import ContractProcessingStage from "@/components/upload/contract-processing-stage";
 import ContractProcessingComplete from "@/components/upload/contract-processing-complete";
+import ClauseDisplay from "@/components/upload/clauses-display";
 import { useMutation } from "@tanstack/react-query";
+import { debounce } from "@/lib/utils";
 
 export const Route = createFileRoute("/(app)/contracts/create/write")({
   component: RouteComponent,
@@ -75,7 +77,7 @@ const fetchSuggestions = async (
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 3);
+  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 4);
 };
 
 function RouteComponent() {
@@ -120,25 +122,22 @@ function RouteComponent() {
     },
   });
 
-  // Debounced effect to fetch suggestions after 10 seconds of inactivity
+  // Create a debounced function to fetch suggestions
+  const debouncedFetchSuggestions = useMemo(
+    () =>
+      debounce((content: string) => {
+        if (content.trim() && currentStep === "draft") {
+          console.log("Fetching suggestions for content...");
+          suggestionsMutation.mutate({ content });
+        }
+      }, 5000),
+    [suggestionsMutation, currentStep]
+  );
+
+  // Trigger debounced suggestions when content changes
   useEffect(() => {
-    // Only fetch suggestions if there's content and we're in draft mode
-    if (!content.trim() || currentStep !== "draft") {
-      return;
-    }
-
-    // Set up a debounce timer
-    const timer = setTimeout(() => {
-      console.log("Fetching suggestions for content...");
-      suggestionsMutation.mutate({ content });
-    }, 5000); // 5 seconds
-
-    // Cleanup function to clear the timer if content changes
-    return () => {
-      clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, currentStep]);
+    debouncedFetchSuggestions(content);
+  }, [content, debouncedFetchSuggestions]);
 
   const handleInsertClause = (clause: ClauseSuggestion) => {
     const newContent =
@@ -196,7 +195,8 @@ function RouteComponent() {
 
       const uploadedContract = await contractActions.uploadContractContent(
         content,
-        fileName
+        fileName,
+        metadata.category
       );
       console.log("Upload response:", uploadedContract);
 
@@ -299,7 +299,11 @@ function RouteComponent() {
               description="Verifying legal and policies compliance..."
               progress={progress}
               animationType="scale"
-            />
+            >
+              {clausesData && Array.isArray(clausesData) && (
+                <ClauseDisplay clauses={clausesData} />
+              )}
+            </ContractProcessingStage>
           )}
 
           {currentStep === "complete" && (
@@ -390,6 +394,7 @@ function RouteComponent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            className="max-h-[calc(95vh-4rem)]"
           >
             <ClauseSuggestions
               suggestions={suggestionsMutation.data || []}

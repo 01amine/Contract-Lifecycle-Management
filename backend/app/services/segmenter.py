@@ -2,7 +2,7 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from agno.agent import Agent
-from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
 from app.config import settings
 
 
@@ -26,9 +26,10 @@ def extract_clauses(contract_text: str) -> ClauseExtractionResult:
     print(contract_text)
     agent = Agent(
         name="ClauseExtractor",
-        model=Gemini(
-            id="gemini-2.5-flash",
-            api_key=settings.GOOGLE_API_KEY,
+        model=OpenAIChat(
+            id=settings.GROQ_MODEL,
+            api_key=settings.GROQ_API_KEY,
+            base_url=settings.GROQ_BASE_URL,
         ),
         instructions=[
             "Extract ALL clauses from contracts with hierarchical structure, regardless of language (English or Arabic).",

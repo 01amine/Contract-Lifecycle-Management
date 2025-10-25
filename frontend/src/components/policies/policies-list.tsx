@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PolicyStatusDialog } from "./policy-status-dialog";
 import { PolicyItem } from "./policy-item";
+import { motion } from "motion/react";
 
 export function PoliciesList({
   setActiveTab,
@@ -84,13 +85,23 @@ export function PoliciesList({
 
           {!isLoading && !error && policies && policies.length > 0 && (
             <Accordion type="single" collapsible>
-              {policies.map((policy) => (
-                <PolicyItem
+              {policies.map((policy, index) => (
+                <motion.div
                   key={policy.id}
-                  policy={policy}
-                  onEdit={handleEdit}
-                  onChangeStatus={openStatusDialog}
-                />
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    duration: 0.2,
+                    ease: "easeInOut",
+                    delay: index * 0.075,
+                  }}
+                >
+                  <PolicyItem
+                    policy={policy}
+                    onEdit={handleEdit}
+                    onChangeStatus={openStatusDialog}
+                  />
+                </motion.div>
               ))}
             </Accordion>
           )}

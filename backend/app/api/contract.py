@@ -116,21 +116,27 @@ async def get_signed_url():
 @router.post("/upload-contract", description="Upload contract image, PDF, text, or handwriting", response_model=ContractDocument)
 async def upload_contract(
     request: Request,
-    file: Optional[UploadFile] = File(None),
 ):
     """
     Upload a contract either as a file or as text content.
-    - For file uploads: send as multipart/form-data with 'file' field
-    - For text content: send as JSON with 'content' and optional 'file_name' fields
+    - For file uploads: send as multipart/form-data with 'file', 'name', and 'category' fields
+    - For text content: send as multipart/form-data with 'content', 'name', and 'category' fields
     """
     document_extract: DocumentExtractor = request.app.state.document_extract
     doc_bucket = DocumentBucket(file_prefix="contracts")
+
+    # Get form data to extract all fields
+    form_data = await request.form()
+    file = form_data.get("file")
+    name = form_data.get("name")
+    category = form_data.get("category")
+    content = form_data.get("content")
 
     file_id = str(uuid.uuid4())
     extracted_data = None
     final_file_name = None
     
-    if file:
+    if file and hasattr(file, 'filename'):
         # Handle file upload (multipart/form-data)
         with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp_file:
             tmp_file.write(await file.read())
@@ -139,30 +145,21 @@ async def upload_contract(
         file_id = await doc_bucket.put(file=file, object_name=file.filename)
         extracted_data = document_extract.extract(path_obj)
         path_obj.unlink()
-        final_file_name = file.filename
+        final_file_name = name if name else file.filename
+    elif content:
+        # Handle text content upload
+        final_file_name = name if name else f"draft_contract_{file_id}.txt"
+        extracted_data = content
     else:
-        # Handle JSON content upload (written by hand)
-        try:
-            body = await request.json()
-            content = body.get("content")
-            file_name = body.get("file_name")
-            
-            if not content:
-                raise HTTPException(status_code=400, detail="Either a file or content must be provided.")
-            
-            final_file_name = file_name if file_name else f"draft_contract_{file_id}.txt"
-            extracted_data = content
-        except Exception as e:
-            if isinstance(e, HTTPException):
-                raise
-            raise HTTPException(status_code=400, detail="Either a file or content must be provided.")
+        raise HTTPException(status_code=400, detail="Either a file or content must be provided.")
     
     contract_doc = ContractDocument(
         file_name=final_file_name,
         file_id=file_id,
+        category=category,
         content=extracted_data,
     )
-    print(f"Creating contract: {contract_doc.file_name}")
+    print(f"Creating contract: name={contract_doc.file_name}, category={category}")
     await contract_doc.insert()
     
     # Return the document - FastAPI will serialize it properly with response_model
@@ -286,9 +283,11 @@ async def get_contract(contract_id: PydanticObjectId):
 async def list_contracts(
     status: Optional[ContractStatus] = Query(None),
     skip: int = Query(0),
-    limit: int = Query(20)
+    limit: int = Query(20),
+    sort_by: Optional[str] = Query(None),
+    sort_order: Optional[str] = Query("desc")
 ):
-    contracts = await ContractRepository.list_contracts(status, skip, limit)
+    contracts = await ContractRepository.list_contracts(status, skip, limit, sort_by, sort_order)
     return contracts
 
 @router.put("/{contract_id}/status", response_model=ContractDocument)
@@ -301,16 +300,18 @@ async def update_contract_status(
         raise HTTPException(status_code=404, detail="Contract not found")
     return updated
 
-@router.put("/{contract_id}/content", response_model=ContractDocument)
-async def update_contract_content(
+@router.put("/{contract_id}", response_model=ContractDocument)
+async def update_contract(
     contract_id: PydanticObjectId,
-    new_content: str = Body(...)
+    content: Optional[str] = Body(None),
+    name: Optional[str] = Body(None),
+    category: Optional[str] = Body(None)
 ):
-    updated = await ContractRepository.update_contract_content(contract_id, new_content)
+    """Update contract content, name, and/or category"""
+    updated = await ContractRepository.update_contract(contract_id, content, name, category)
     if not updated:
         raise HTTPException(status_code=404, detail="Contract not found")
     return updated
-
 
 @router.delete("/{contract_id}", response_model=dict)
 async def delete_contract(contract_id: PydanticObjectId):

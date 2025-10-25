@@ -81,7 +81,7 @@ export function TextEditor({
         placeholder="Start drafting your contract... type more to get Ai suggestions"
         value={content}
         onChange={(e) => onContentChange(e.target.value)}
-        className="min-h-[250px] h-[calc(95vh-21.5rem)] text-sm border-border focus-visible:ring-0 focus:border-border ring-0! bg-muted/80!"
+        className="min-h-[250px] h-[calc(95vh-30.5rem)] text-sm border-border focus-visible:ring-0 focus:border-border ring-0! bg-muted/80!"
       />
     </div>
   );

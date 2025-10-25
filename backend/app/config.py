@@ -33,11 +33,15 @@ class LLMConfig:
     
     
     openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-3.5-turbo"
+    openai_model: str = "gpt-4o"
     
     
     anthropic_api_key: Optional[str] = None
     anthropic_model: str = "claude-3-haiku-20240307"
+    
+    
+    groq_api_key: Optional[str] = None
+    groq_model: str = "openai/gpt-oss-120b"
     
     
     temperature: float = 0.2
@@ -67,6 +71,7 @@ class Config:
         self.llm.gemini_api_key = os.getenv('GEMINI_API_KEY')
         self.llm.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.llm.anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
+        self.llm.groq_api_key = os.getenv('GROQ_API_KEY')
         
         output_dir = os.getenv('OUTPUT_DIR')
         if output_dir:
@@ -77,11 +82,12 @@ class Config:
         has_llm_key = any([
             self.llm.gemini_api_key,
             self.llm.openai_api_key,
-            self.llm.anthropic_api_key
+            self.llm.anthropic_api_key,
+            self.llm.groq_api_key
         ])
         
         if not has_llm_key:
-            print("Warning: No LLM API key configured. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY")
+            print("Warning: No LLM API key configured. Set GEMINI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GROQ_API_KEY")
         
         return True
     
@@ -150,17 +156,19 @@ class Settings(BaseSettings):
     UPLOAD_TEMP_DIR: str = "/tmp/contract_uploads"
     CHROMA_PERSIST_DIR: str = "./data/chroma"
     CHROMA_COLLECTION_NAME: str = "contract_templates"
-    LLM_PROVIDER: str = "gemini"  
+    LLM_PROVIDER: str = "groq"  
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     GOOGLE_API_KEY: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4-turbo-preview"
     ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"
     GOOGLE_MODEL: str = "gemini-pro"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     LLM_TEMPERATURE: float = 0.1  
     LLM_MAX_TOKENS: int = 2000
-    LLM_TIMEOUT: int = 60  
-    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    LLM_TIMEOUT: int = 60
     EMBEDDING_DIMENSION: int = 384
     MONGO_URI: str = Field(default=...)
     MONGO_DB: str = Field(default=...)
@@ -180,6 +188,17 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="allow",  
     )
+    
+    def model_post_init(self, __context) -> None:
+        """Post-initialization to set up API keys based on provider."""
+        # If using Groq provider, use GROQ_API_KEY for OpenAI client compatibility
+        if self.LLM_PROVIDER == "groq" and self.GROQ_API_KEY:
+            # Set OPENAI_API_KEY to GROQ_API_KEY for OpenAI-compatible clients
+            if not self.OPENAI_API_KEY:
+                self.OPENAI_API_KEY = self.GROQ_API_KEY
+            # Also set in environment for clients that read from env
+            os.environ['OPENAI_API_KEY'] = self.GROQ_API_KEY
+        return super().model_post_init(__context) if hasattr(super(), 'model_post_init') else None
 
 
 settings = Settings()

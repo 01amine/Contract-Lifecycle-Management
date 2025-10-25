@@ -1,12 +1,43 @@
 import { useHeader } from "@/stores/header";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { contractActions } from "@/actions/contracts";
-import { FileText, AlertCircle, Loader2 } from "lucide-react";
+import { useUpdateContract } from "@/actions/hooks/use-contracts";
+import { FileText, AlertCircle, Loader2, ListIcon } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Tabs, useTabs, TabContent } from "@/components/ui/tabs";
+import { TextEditor } from "@/components/editor/text-editor";
+import { MetadataForm } from "@/components/editor/metadata-form";
+import { ClauseSuggestions } from "@/components/editor/clause-suggestions";
+import { TemplateDialog } from "@/components/editor/template-dialog";
+import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "motion/react";
+import type { ClauseSuggestion } from "@/lib/mocks";
+import { getTemplateContent, mockClauseSuggestions } from "@/lib/mocks";
+import { debounce } from "@/lib/utils";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
 });
+
+// Mock function to fetch suggestions - replace with actual API call later
+const fetchSuggestions = async (
+  content: string,
+  query?: string
+): Promise<ClauseSuggestion[]> => {
+  console.log(`Analyzing ${content.length} characters for suggestions...`);
+  console.log(`Query: ${query}`);
+
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 4);
+};
+
+interface DraftMetadata {
+  title: string;
+  category: string;
+}
 
 function RouteComponent() {
   const { id } = Route.useParams();
@@ -19,6 +50,100 @@ function RouteComponent() {
     queryKey: ["contract", id],
     queryFn: () => contractActions.getContract(id),
   });
+
+  const [metadata, setMetadata] = useState<DraftMetadata>({
+    title: "",
+    category: "",
+  });
+  const [content, setContent] = useState("");
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const { activeTab, setActiveTab } = useTabs({
+    tabs: [
+      { id: "overview", label: "Overview" },
+      { id: "clauses", label: "Clauses" },
+      { id: "edit", label: "Edit" },
+    ],
+    defaultTab: "overview",
+  });
+
+  // Mutation for fetching suggestions
+  const suggestionsMutation = useMutation({
+    mutationFn: ({ content, query }: { content: string; query?: string }) =>
+      fetchSuggestions(content, query),
+    onError: (error) => {
+      console.error("Failed to fetch suggestions:", error);
+    },
+  });
+
+  // Mutation for updating contract
+  const updateContractMutation = useUpdateContract();
+
+  // Create a debounced function to fetch suggestions
+  const debouncedFetchSuggestions = useMemo(
+    () =>
+      debounce((content: string, mutate: typeof suggestionsMutation.mutate) => {
+        if (content.trim()) {
+          console.log("Fetching suggestions for content...");
+          mutate({ content });
+        }
+      }, 5000),
+    [] // Empty dependency array - function is created only once
+  );
+
+  // Initialize metadata and content from contract data
+  useEffect(() => {
+    if (contract) {
+      setMetadata({
+        title: contract.file_name || "",
+        category: contract.category || "",
+      });
+      setContent(contract.content || "");
+    }
+  }, [contract]);
+
+  // Trigger debounced suggestions when content changes
+  useEffect(() => {
+    debouncedFetchSuggestions(content, suggestionsMutation.mutate);
+  }, [content, debouncedFetchSuggestions, suggestionsMutation.mutate]);
+
+  const handleInsertClause = (clause: ClauseSuggestion) => {
+    const newContent =
+      content + (content ? "\n\n" : "") + `${clause.type}:\n${clause.content}`;
+    setContent(newContent);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+      }
+    }, 100);
+  };
+
+  const handleAskAI = (query: string) => {
+    suggestionsMutation.mutate({ content, query });
+  };
+
+  const handleSaveChanges = async () => {
+    if (!id || !content.trim()) return;
+
+    try {
+      // Update content and metadata in a single call
+      await updateContractMutation.mutateAsync({
+        id,
+        data: {
+          content,
+          name: metadata.title,
+          category: metadata.category,
+        },
+      });
+
+      // Switch to overview tab after successful save
+      setActiveTab("overview");
+    } catch (error) {
+      console.error("Failed to save changes:", error);
+    }
+  };
 
   useHeader(contract?.file_name || "Contract Details");
 
@@ -59,93 +184,163 @@ function RouteComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Contract Header */}
-      <div className="p-6 border rounded-xl shadow-island bg-card">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold font-title mb-1">
-              {contract.file_name}
-            </h2>
+    <div className="space-y-4">
+      {/* Tabs */}
+      <Tabs
+        tabs={[
+          { id: "overview", label: "Overview" },
+          { id: "clauses", label: "Clauses" },
+          { id: "edit", label: "Edit" },
+        ]}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      >
+        <TabContent value="overview" activeTab={activeTab}>
+          <div className="p-6 border rounded-xl shadow-island bg-card min-h-[calc(95vh-8rem)]">
+            <h3 className="text-lg font-semibold">Contract Overview</h3>
             <p className="text-sm text-muted-foreground">
-              Status:{" "}
-              <span
-                className={`font-medium ${
-                  contract.status === "approved"
-                    ? "text-green-600"
-                    : contract.status === "under_review"
-                    ? "text-yellow-600"
-                    : contract.status === "rejected"
-                    ? "text-red-600"
-                    : "text-blue-600"
-                }`}
-              >
-                {contract.status.replace("_", " ").toUpperCase()}
-              </span>
+              This is a summary of the contract.
             </p>
           </div>
-          <div className="text-right text-sm text-muted-foreground">
-            <div>ID: {contract._id}</div>
-            <div>Version: {contract.version}</div>
-          </div>
-        </div>
+        </TabContent>
+        {/* Edit Tab */}
+        <TabContent value="edit" activeTab={activeTab}>
+          <motion.div
+            className="grid gap-4 min-h-[calc(95vh-8rem)] overflow-hidden"
+            style={{
+              gridTemplateColumns:
+                content.length > 0 && showSuggestions ? "5fr 3fr" : "1fr",
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            layout
+          >
+            <motion.div className="space-y-4" layout>
+              <MetadataForm
+                metadata={metadata}
+                onMetadataChange={setMetadata}
+                showSuggestions={showSuggestions && content.length > 0}
+                onShowSuggestionsChange={setShowSuggestions}
+                onTemplatesClick={() => setIsTemplateDialogOpen(true)}
+              />
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-4 gap-4 mt-4">
-          {contract.compliance_score !== undefined && (
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1">
-                Compliance Score
+              <TextEditor
+                content={content}
+                onContentChange={setContent}
+                textareaRef={textareaRef}
+              />
+
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setActiveTab("overview")}
+                  disabled={updateContractMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleSaveChanges}
+                  disabled={updateContractMutation.isPending || !content.trim()}
+                >
+                  {updateContractMutation.isPending ? (
+                    <>
+                      <Loader2 className="size-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
               </div>
-              <div
-                className={`text-xl font-bold ${
-                  contract.compliance_score >= 0.9
-                    ? "text-green-600"
-                    : contract.compliance_score >= 0.7
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                }`}
-              >
-                {(contract.compliance_score * 100).toFixed(1)}%
+            </motion.div>
+
+            {/* AI Suggestions Panel */}
+            <AnimatePresence mode="popLayout">
+              {content.length > 0 && showSuggestions && (
+                <motion.div
+                  layout
+                  key="clause-suggestions"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="max-h-[calc(95vh-8rem)]"
+                >
+                  <ClauseSuggestions
+                    suggestions={suggestionsMutation.data || []}
+                    onInsertClause={handleInsertClause}
+                    onAskAI={handleAskAI}
+                    isLoading={suggestionsMutation.isPending}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </TabContent>
+
+        {/* Clauses Tab */}
+        <TabContent value="clauses" activeTab={activeTab}>
+          <div className="space-y-4">
+            <div className="p-6 border rounded-xl shadow-island bg-card">
+              <div className="flex items-center gap-2 mb-4">
+                <ListIcon className="size-5 text-primary" />
+                <h3 className="text-lg font-semibold">Extracted Clauses</h3>
               </div>
-            </div>
-          )}
-          {contract.clauses && (
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1">
-                Total Clauses
-              </div>
-              <div className="text-xl font-bold">{contract.clauses.length}</div>
-            </div>
-          )}
-          {contract.risks && (
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <div className="text-xs text-muted-foreground mb-1">
-                Risk Items
-              </div>
-              <div className="text-xl font-bold">{contract.risks.length}</div>
-            </div>
-          )}
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="text-xs text-muted-foreground mb-1">
-              Last Updated
-            </div>
-            <div className="text-sm font-medium">
-              {new Date(contract.last_updated).toLocaleDateString()}
+              {contract.clauses && contract.clauses.length > 0 ? (
+                <div className="space-y-4">
+                  {contract.clauses.map((clause: any, index: number) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-muted/50 rounded-lg border border-border/50"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-muted-foreground">
+                            #{index + 1}
+                          </span>
+                          {clause.type && (
+                            <span className="text-xs font-medium px-2 py-1 rounded bg-primary/10 text-primary">
+                              {clause.type}
+                            </span>
+                          )}
+                        </div>
+                        {clause.confidence && (
+                          <span className="text-xs text-muted-foreground">
+                            Confidence: {(clause.confidence * 100).toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {clause.content ||
+                          clause.text ||
+                          JSON.stringify(clause)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <ListIcon className="size-12 mx-auto mb-4 opacity-50" />
+                  <p>No clauses extracted yet</p>
+                  <p className="text-xs mt-2">
+                    Clauses will appear here after processing
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        </TabContent>
+      </Tabs>
 
-      {/* Full Contract Data (JSON) */}
-      <div className="p-6 border rounded-xl shadow-island bg-card">
-        <h3 className="text-lg font-semibold mb-4">Complete Contract Data</h3>
-        <div className="bg-muted/50 rounded-lg p-4 overflow-auto max-h-[600px]">
-          <pre className="text-xs font-mono">
-            {JSON.stringify(contract, null, 2)}
-          </pre>
-        </div>
-      </div>
+      {/* Template Dialog */}
+      <TemplateDialog
+        isOpen={isTemplateDialogOpen}
+        onOpenChange={setIsTemplateDialogOpen}
+        onSelectTemplate={(templateId) => {
+          setContent(getTemplateContent(templateId));
+          textareaRef.current?.focus();
+          setIsTemplateDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ export interface ContractDocument {
   _id: string;
   file_name: string;
   file_id: string;
+  category?: string;
   content?: string;
   status: ContractStatus;
   created_at: string;
@@ -27,6 +28,8 @@ export interface ContractsListParams {
   status?: ContractStatus;
   skip?: number;
   limit?: number;
+  sort_by?: string;
+  sort_order?: "asc" | "desc";
 }
 
 export interface DashboardStats {
@@ -45,6 +48,8 @@ export const contractActions = {
     if (params?.status) queryParams.append("status", params.status);
     if (params?.skip) queryParams.append("skip", params.skip.toString());
     if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
 
     const queryString = queryParams.toString();
     return api.get<ContractDocument[]>(
@@ -58,7 +63,19 @@ export const contractActions = {
   },
 
   // Upload a new contract
-  async uploadContract(formData: FormData): Promise<ContractDocument> {
+  async uploadContract(
+    formData: FormData,
+    name?: string,
+    category?: string
+  ): Promise<ContractDocument> {
+    // Add name and category to form data if provided
+    if (name) {
+      formData.append("name", name);
+    }
+    if (category) {
+      formData.append("category", category);
+    }
+
     const response = await fetch(`${api.baseUrl}/contract/upload-contract`, {
       method: "POST",
       body: formData,
@@ -82,12 +99,34 @@ export const contractActions = {
   // Upload contract content (text written by hand)
   async uploadContractContent(
     content: string,
-    fileName: string
+    fileName: string,
+    category?: string
   ): Promise<ContractDocument> {
-    return api.post<ContractDocument>(`/contract/upload-contract`, {
-      content,
-      file_name: fileName,
+    const formData = new FormData();
+    formData.append("content", content);
+    formData.append("name", fileName);
+    if (category) {
+      formData.append("category", category);
+    }
+
+    const response = await fetch(`${api.baseUrl}/contract/upload-contract`, {
+      method: "POST",
+      body: formData,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        error: {
+          message: "Unknown error occurred",
+          code: response.status,
+        },
+      }));
+      throw new Error(
+        error.error?.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
   },
 
   // Update contract status
@@ -100,14 +139,19 @@ export const contractActions = {
     });
   },
 
-  // Update contract content
-  async updateContractContent(
+  // Update contract (content, name, and/or category)
+  async updateContract(
     id: string,
-    content: string
+    data: {
+      content?: string;
+      name?: string;
+      category?: string;
+    }
   ): Promise<ContractDocument> {
-    return api.put<ContractDocument>(`/contract/${id}/content`, {
-      new_content: content,
-    });
+    await api.put<ContractDocument>(`/contract/${id}`, data);
+    await this.extractClauses(id);
+    await this.complianceCheck(id);
+    return this.getContract(id);
   },
 
   // Delete a contract

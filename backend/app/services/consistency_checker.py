@@ -4,7 +4,7 @@ from typing import List, Optional
 from app.models.documentUploaded import clause
 from pydantic import BaseModel, Field
 from agno.agent import Agent
-from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
 from agno.knowledge.knowledge import Knowledge 
 from agno.vectordb.qdrant import Qdrant
 from app.config import settings
@@ -58,9 +58,10 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
     
     return Agent(
         name="ComplianceChecker",
-        model=Gemini(
-            id="gemini-2.5-flash",
-            api_key=settings.GOOGLE_API_KEY,
+        model=OpenAIChat(
+            id=settings.GROQ_MODEL,
+            api_key=settings.GROQ_API_KEY,
+            base_url=settings.GROQ_BASE_URL,
         ),
         instructions=[
             "You are a contract compliance expert checking against company policies.",

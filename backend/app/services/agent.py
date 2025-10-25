@@ -1,14 +1,14 @@
 from agno.agent import Agent
 from app.config import settings
 from typing import List, Dict, Any, Generator
-from agno.models.google import Gemini
+from agno.models.openai import OpenAIChat
 
-def gemini_pro_connector(messages: List[Dict[str, Any]], model_kwargs: Dict[str, Any], **kwargs) -> Any:
+def groq_connector(messages: List[Dict[str, Any]], model_kwargs: Dict[str, Any], **kwargs) -> Any:
     """
-    Connects the agno Agent framework to the Gemini 1.5 Pro API.
+    Connects the agno Agent framework to the Groq API.
 
-    Thi function uses settings.GOOGLE_API_KEY and forces the model to
-    'gemini-1.5-pro' for consistent worker behavior.
+    This function uses settings.GROQ_API_KEY and forces the model to
+    'openai/gpt-oss-120b' for consistent worker behavior.
 
     Args:
         messages: The conversation history passed by the Agent framework.
@@ -18,15 +18,15 @@ def gemini_pro_connector(messages: List[Dict[str, Any]], model_kwargs: Dict[str,
         The API response object or a stream generator, depending on the call.
     """
 
-    API_KEY = settings.GOOGLE_API_KEY
-    MODEL_NAME = "gemini-1.5-pro"
+    API_KEY = settings.GROQ_API_KEY
+    MODEL_NAME = settings.GROQ_MODEL
 
     if not API_KEY:
-        raise ValueError("GOOGLE_API_KEY is not set in app.config.settings.")
+        raise ValueError("GROQ_API_KEY is not set in app.config.settings.")
 
     config_params = {
         "temperature": settings.LLM_TEMPERATURE,
-        "max_output_tokens": settings.LLM_MAX_TOKENS,
+        "max_tokens": settings.LLM_MAX_TOKENS,
     }
 
     final_config = {**config_params, **model_kwargs}
@@ -42,12 +42,13 @@ def gemini_pro_connector(messages: List[Dict[str, Any]], model_kwargs: Dict[str,
     return f"Response from {MODEL_NAME} stub."
 
 
-gemini_pro = gemini_pro_connector
+groq_pro = groq_connector
 
 agent = Agent(
     name="abstract_worker_agent",
-    model=Gemini(
-        id="gemini-2.5-flash",
-        api_key=settings.GOOGLE_API_KEY,
+    model=OpenAIChat(
+        id=settings.GROQ_MODEL,
+        api_key=settings.GROQ_API_KEY,
+        base_url=settings.GROQ_BASE_URL,
     ),
     stream=False)

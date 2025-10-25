@@ -12,6 +12,7 @@ import UploadDropzone from "@/components/upload/upload-dropzone";
 import ContractProcessingStepper from "@/components/upload/contract-processing-stepper";
 import ContractProcessingStage from "@/components/upload/contract-processing-stage";
 import ContractProcessingComplete from "@/components/upload/contract-processing-complete";
+import ClauseDisplay from "@/components/upload/clauses-display";
 import { Button } from "@/components/ui/button";
 import { contractActions } from "@/actions/contracts";
 
@@ -222,7 +223,11 @@ function RouteComponent() {
             description="Verifying legal and Policy compliance..."
             progress={progress}
             animationType="scale"
-          />
+          >
+            {clausesData && Array.isArray(clausesData) && (
+              <ClauseDisplay clauses={clausesData} />
+            )}
+          </ContractProcessingStage>
         )}
 
         {currentStep === "complete" && (

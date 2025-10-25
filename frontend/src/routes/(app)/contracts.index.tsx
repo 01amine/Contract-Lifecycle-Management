@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { format } from "date-fns";
-import { useContracts } from "@/actions/hooks/use-contracts";
+import { useInfiniteContracts } from "@/actions/hooks/use-contracts";
 import { ContractStatus } from "@/actions/contracts";
 import { getStatusColor, getStatusLabel } from "@/lib/contract-status";
 import { Loader2 } from "lucide-react";
 import { motion } from "motion/react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,
@@ -29,9 +30,19 @@ function RouteComponent() {
   const [dateFilter, setDateFilter] = useState("");
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("all");
 
-  const { data: contracts, isLoading, error } = useContracts();
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteContracts();
 
-  const filteredContracts = (contracts || []).filter((contract) => {
+  // Flatten all pages into a single array
+  const contracts = data?.pages.flat() || [];
+
+  const filteredContracts = contracts.filter((contract) => {
     const matchesSearch = contract.file_name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -116,6 +127,9 @@ function RouteComponent() {
                     File Name
                   </th>
                   <th className="text-left p-4 font-semibold text-sm text-primary">
+                    Category
+                  </th>
+                  <th className="text-left p-4 font-semibold text-sm text-primary">
                     Status
                   </th>
                   <th className="text-left p-4 font-semibold text-sm text-primary">
@@ -127,47 +141,59 @@ function RouteComponent() {
                 </tr>
               </thead>
               <tbody>
-                {filteredContracts.map((contract, index) => (
-                  <motion.tr
-                    initial={{ opacity: 0, x: 5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: index * 0.04 }}
-                    key={contract._id}
-                    className={`transition-colors ${
-                      index % 2 === 0
-                        ? "bg-card"
-                        : "bg-muted/50 hover:bg-muted/60"
-                    }`}
-                  >
-                    <td className="p-4 text-sm font-medium text-muted-foreground">
-                      {index + 1}
-                    </td>
-                    <td className="p-4 text-sm font-medium">
-                      <Link
-                        to="/contracts/$id"
-                        params={{ id: contract._id }}
-                        className="hover:underline"
-                      >
-                        {contract.file_name}
-                      </Link>
-                    </td>
-                    <td className="p-4 text-sm">
-                      <span
-                        className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
-                          contract.status
-                        )}`}
-                      >
-                        {getStatusLabel(contract.status)}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm">
-                      {format(new Date(contract.created_at), "d MMM yyyy")}
-                    </td>
-                    <td className="p-4 text-sm font-medium">
-                      v{contract.version}
-                    </td>
-                  </motion.tr>
-                ))}
+                {filteredContracts
+                  .sort(
+                    (a, b) =>
+                      new Date(b.created_at).getTime() -
+                      new Date(a.created_at).getTime()
+                  )
+                  .map((contract, index) => (
+                    <motion.tr
+                      initial={{ opacity: 0, x: 5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: index * 0.04 }}
+                      key={contract._id}
+                      className={`transition-colors ${
+                        index % 2 === 0
+                          ? "bg-card"
+                          : "bg-muted/50 hover:bg-muted/60"
+                      }`}
+                    >
+                      <td className="p-4 text-sm font-medium text-muted-foreground">
+                        {index + 1}
+                      </td>
+                      <td className="p-4 text-sm font-medium">
+                        <Link
+                          to="/contracts/$id"
+                          params={{ id: contract._id }}
+                          className="hover:underline"
+                        >
+                          {contract.file_name}
+                        </Link>
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">
+                        {contract.category || "—"}
+                      </td>
+                      <td className="p-4 text-sm">
+                        <span
+                          className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
+                            contract.status
+                          )}`}
+                        >
+                          {getStatusLabel(contract.status)}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm">
+                        {format(
+                          new Date(contract.created_at),
+                          "d MMM yyyy HH:mm"
+                        )}
+                      </td>
+                      <td className="p-4 text-sm font-medium">
+                        v{contract.version}
+                      </td>
+                    </motion.tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -179,6 +205,26 @@ function RouteComponent() {
           </div>
         )}
       </div>
+
+      {/* Load More Button */}
+      {hasNextPage && (
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            variant="outline"
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Load More"
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
