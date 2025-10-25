@@ -3,12 +3,14 @@ import tempfile
 from typing import Optional
 import uuid
 from pathlib import Path 
-from fastapi import APIRouter, Body, File, Request, UploadFile
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Body, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
 from app.minio import DocumentBucket
-from app.models.documentUploaded import ContractDocument
+from app.models.documentUploaded import ContractDocument, ContractStatus
 from app.services.extractor import DocumentExtractor
+from app.repositories.contract import ContractRepository
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -132,10 +134,85 @@ async def upload_contract(
     contract_doc = ContractDocument(
         file_name=file.filename if file.filename else f"contract_{file_id}.pdf",
         file_id=file_id,
-        extracted_data=extracted_data,
-        content=content if content else None,
+        content=content if content else extracted_data,
     )
     await contract_doc.insert()
 
     return contract_doc.model_dump()
 
+
+@router.post("/{contract_id}/extract-clauses")
+async def extract_clauses(contract_id: str):
+    fake_clauses = [
+        {"type": "Payment Terms", "text": "The payment shall be made within 30 days."},
+        {"type": "Termination", "text": "Either party may terminate with 30 days' notice."}
+    ]
+
+    await ContractDocument.find_one({"file_id": contract_id}).update(
+        {"$set": {"clauses": fake_clauses, "status": "clauses_extracted"}}
+    )
+
+    return {"status": "clauses_extracted", "clauses_count": len(fake_clauses)}
+
+@router.post("/{contract_id}/compliance-check")
+async def compliance_check(contract_id: str):
+    fake_risks = [
+        {"clause": "Termination", "risk": "High", "reason": "No compensation clause for early termination"},
+        {"clause": "Payment Terms", "risk": "Low", "reason": "Within acceptable policy range"}
+    ]
+
+    compliance_score = 0.85
+    await ContractDocument.find_one({"file_id": contract_id}).update(
+        {"$set": {"risks": fake_risks, "compliance_score": compliance_score, "status": "compliance_pending"}}
+    )
+
+    return {"status": "compliance_pending", "compliance_score": compliance_score, "issues": fake_risks}
+
+
+@router.get("/{contract_id}", response_model=ContractDocument)
+async def get_contract(contract_id: PydanticObjectId):
+    """
+    Retrieve a contract by its ID.
+    """
+    contract = await ContractRepository.get_contract_by_id(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return contract
+
+
+@router.get("/", response_model=list[ContractDocument])
+async def list_contracts(
+    status: Optional[ContractStatus] = Query(None),
+    skip: int = Query(0),
+    limit: int = Query(20)
+):
+    contracts = await ContractRepository.list_contracts(status, skip, limit)
+    return contracts
+
+@router.put("/{contract_id}/status", response_model=ContractDocument)
+async def update_contract_status(
+    contract_id: PydanticObjectId,
+    new_status: ContractStatus = Body(...)
+):
+    updated = await ContractRepository.update_contract_status(contract_id, new_status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return updated
+
+@router.put("/{contract_id}/content", response_model=ContractDocument)
+async def update_contract_content(
+    contract_id: PydanticObjectId,
+    new_content: str = Body(...)
+):
+    updated = await ContractRepository.update_contract_content(contract_id, new_content)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return updated
+
+
+@router.delete("/{contract_id}", response_model=dict)
+async def delete_contract(contract_id: PydanticObjectId):
+    deleted = await ContractRepository.delete_contract(contract_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    return {"message": "Contract deleted successfully"}
