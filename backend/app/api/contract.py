@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 
-from minio import DocumentBucket
+from app.minio import DocumentBucket
 from app.models.documentUploaded import ContractDocument
 
 

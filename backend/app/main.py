@@ -16,13 +16,16 @@ from app.api.analytics import router as analytics_router
 from app.api.policy import router as policy_router
 from app.models.policy import Template
 from app.services.embedding import TextDocumentProcessor
+from app.api.contract import router as contract_router
+from app.models.documentUploaded import ContractDocument
 
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_DB]
 
 async def init_mongo():
-    await init_beanie(database=mongo_db, document_models=[ notification,Template])
+    
+    await init_beanie(database=mongo_db, document_models=[ notification,Template,ContractDocument])
 
 async def init_qdrant():
     client =AsyncQdrantClient(url=settings.QDRANT_URL, port=6333)
@@ -91,11 +94,9 @@ async def general_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Include routers
-# app.include_router(user_router)
+app.include_router(contract_router)
 # app.include_router(coupons_router)
 # app.include_router(brands_router)
 # app.include_router(categorie_router)
