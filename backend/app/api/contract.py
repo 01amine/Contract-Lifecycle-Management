@@ -13,7 +13,7 @@ from app.repositories.contract import ContractRepository
 from app.services.agent import agent
 from app.services.segmenter import  extract_clauses
 from app.services.consistency_checker import check_compliance, convert_clauses_for_compliance
-from app.services.compliance_with_prompt import check_compliance_pompt
+from app.services.compliance_with_prompt import modify_contract_text
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -256,60 +256,20 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
         )
         
 
-@router.post("/{contract_id}/compliance-check-plus-prompt")
-async def compliance_check_endpoint(contract_id: PydanticObjectId,user_prompt: str = Body(...)): 
-    contract = await ContractRepository.get_contract_by_id(contract_id)
-    if not contract:
-        raise HTTPException(status_code=404, detail="Contract not found")
+@router.post("/compliance-check-plus-prompt")
+async def compliance_check_endpoint(
+    content: str = Body(..., description="The full contract text to be modified."),
+    user_prompt: str = Body(..., description="The instruction for the agent to modify the text.")
+): 
     
-    if not contract or len(contract.clauses) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="No clauses found. Run extraction first."
-        )
+    modified_text = modify_contract_text( 
+        clauses=content,
+        collection_name="company_policies",
+        user_prompt=user_prompt
+    )
     
-    try:
-        clauses = convert_clauses_for_compliance(contract.clauses)
+    return modified_text
         
-        result = check_compliance_pompt(
-            clauses=clauses,
-            contract_id=str(contract_id),
-            collection_name="company_policies",
-            user_prompt=user_prompt
-        )
-        
-        risks = [risk.model_dump() for risk in result.risks]
-        compliance_score = result.compliance_score
-        
-        if compliance_score >= 0.9:
-            new_status = ContractStatus.APPROVED
-        elif compliance_score >= 0.7:
-            new_status = ContractStatus.UNDER_REVIEW
-        else:
-            new_status = ContractStatus.UNDER_REVIEW
-        
-        await contract.update({
-            "$set": {
-                "risks": risks,
-                "compliance_score": compliance_score,
-                "status": new_status,
-            }
-        })
-        
-        return {
-            "risks": risks,
-            "compliance_score": compliance_score
-        }
-        
-    except Exception as e:
-        await contract.update({
-            "$set": {"status": ContractStatus.REJECTED}
-        })
-        raise HTTPException(
-            status_code=500,
-            detail=f"Compliance check failed: {str(e)}"
-        )
-
 @router.get("/{contract_id}", response_model=ContractDocument)
 async def get_contract(contract_id: PydanticObjectId):
     """

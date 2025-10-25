@@ -32,7 +32,6 @@ class RuleEngineService:
                 "id": "R003",
                 "category": "MISSING_ELEMENTS",
                 "description": "In Indemnity clauses, verify the presence of the word 'indemnify'.",
-                # FIX: Added **kwargs to prevent TypeError if context contains unused keys (like 'risk_score')
                 "check": lambda clause, clause_type, **kwargs: clause_type == 'INDEMNITY' and 'indemnify' not in clause.lower(),
                 "flag_message": "Indemnity clause may be missing the key operative word 'indemnify'.",
             },

@@ -73,7 +73,7 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
             "Search the knowledge base for relevant company policies before assessing each clause.",
         ],
         knowledge=knowledge_base,
-        search_knowledge=False,  
+        search_knowledge=True,
         # output_schema=ComplianceCheckResult,
         stream=False,
     )
@@ -154,10 +154,10 @@ def convert_clauses_for_compliance(clauses_data: List[clause]) -> List[ClauseWit
     """
     return [
         ClauseWithCompliance(
-            clause_id=c.clause_id, # CORRECTED: Use dot notation
-            text=c.text,           # CORRECTED: Use dot notation
-            heading=c.heading,     # CORRECTED: Use dot notation
-            level=c.level          # CORRECTED: Use dot notation
+            clause_id=c.clause_id,
+            text=c.text,        
+            heading=c.heading,  
+            level=c.level       
         )
         # c is a Pydantic object instance, not a dictionary.
         for c in clauses_data 
