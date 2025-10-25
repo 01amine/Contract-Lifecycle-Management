@@ -1,3 +1,4 @@
+from datetime import timedelta
 import random
 import string
 import uuid
@@ -99,6 +100,18 @@ class Bucket:
             bucket_name=self.bucket_name,
             object_name=f"{self.file_prefix}/{object_name}",
         )
+    async def get_presigned_put_url(
+        self, object_name: str | None = None, expires_in_seconds: int = 600
+    ) -> str:
+        if object_name is None:
+            object_name = str(uuid.uuid4())
+
+        url = await self.client.presigned_put_object(
+            bucket_name=self.bucket_name,
+            object_name=f"{self.file_prefix}/{object_name}",
+            expires=timedelta(seconds=expires_in_seconds),
+        )
+        return url
 
 image_ext_content_type_map = {
     "apng": ["image/apng"],
