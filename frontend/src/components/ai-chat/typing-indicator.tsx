@@ -1,4 +1,3 @@
-import { BotIcon } from "lucide-react";
 import { motion } from "motion/react";
 
 export function TypingIndicator() {
@@ -9,9 +8,7 @@ export function TypingIndicator() {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="flex gap-3"
     >
-      <div className="size-8 rounded-full bg-primary flex items-center justify-center shrink-0">
-        <BotIcon className="size-4 text-white" />
-      </div>
+      <img src="/logo-square.svg" alt="AI" className="size-8 shrink-0" />
       <div className="p-4 rounded-xl bg-card border shadow-island">
         <div className="flex gap-1">
           <div

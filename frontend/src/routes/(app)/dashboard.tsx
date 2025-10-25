@@ -5,6 +5,7 @@ import { UploadSection } from "@/components/dashboard/upload-section";
 import { RecentContracts } from "@/components/dashboard/recent-contracts";
 import { useDashboardStats } from "@/actions/hooks/use-contracts";
 import { Loader2 } from "lucide-react";
+import { motion } from "motion/react";
 
 export const Route = createFileRoute("/(app)/dashboard")({
   component: RouteComponent,
@@ -48,7 +49,14 @@ function RouteComponent() {
               </div>
             ))
           : statsData.map((item, index) => (
-              <StatsCard key={index} title={item.title} value={item.value} />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+                key={index}
+              >
+                <StatsCard key={index} title={item.title} value={item.value} />
+              </motion.div>
             ))}
       </div>
       <div className="grid grid-cols-[5fr_3fr] gap-4 h-[calc(82vh-5rem)] min-h-48">

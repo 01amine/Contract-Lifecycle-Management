@@ -9,7 +9,7 @@ export enum ContractStatus {
 }
 
 export interface ContractDocument {
-  id: string;
+  _id: string;
   file_name: string;
   file_id: string;
   content?: string;
@@ -18,6 +18,9 @@ export interface ContractDocument {
   uploaded_at: string;
   version: number;
   last_updated: string;
+  clauses?: any[];
+  risks?: any[];
+  compliance_score?: number;
 }
 
 export interface ContractsListParams {
@@ -74,6 +77,17 @@ export const contractActions = {
     }
 
     return response.json();
+  },
+
+  // Upload contract content (text written by hand)
+  async uploadContractContent(
+    content: string,
+    fileName: string
+  ): Promise<ContractDocument> {
+    return api.post<ContractDocument>(`/contract/upload-contract`, {
+      content,
+      file_name: fileName,
+    });
   },
 
   // Update contract status

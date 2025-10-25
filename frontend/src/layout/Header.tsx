@@ -7,7 +7,7 @@ export function Header() {
 
   if (!title) return null;
   return (
-    <header className="sticky top-0 left-0 right-0 pb-4 mb-2 z-10">
+    <header className="sticky top-0 left-0 right-0 pb-4 mb-1 z-10">
       <div className="flex items-center justify-between gap-4">
         {title.type === "back" ? (
           <Link

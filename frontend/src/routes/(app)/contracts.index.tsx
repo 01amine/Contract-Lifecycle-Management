@@ -15,6 +15,7 @@ import { useContracts } from "@/actions/hooks/use-contracts";
 import { ContractStatus } from "@/actions/contracts";
 import { getStatusColor, getStatusLabel } from "@/lib/contract-status";
 import { Loader2 } from "lucide-react";
+import { motion } from "motion/react";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,
@@ -104,7 +105,7 @@ function RouteComponent() {
         )}
 
         {!isLoading && !error && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/60">
@@ -127,8 +128,11 @@ function RouteComponent() {
               </thead>
               <tbody>
                 {filteredContracts.map((contract, index) => (
-                  <tr
-                    key={contract.id}
+                  <motion.tr
+                    initial={{ opacity: 0, x: 5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.04 }}
+                    key={contract._id}
                     className={`transition-colors ${
                       index % 2 === 0
                         ? "bg-card"
@@ -141,7 +145,7 @@ function RouteComponent() {
                     <td className="p-4 text-sm font-medium">
                       <Link
                         to="/contracts/$id"
-                        params={{ id: contract.id }}
+                        params={{ id: contract._id }}
                         className="hover:underline"
                       >
                         {contract.file_name}
@@ -162,7 +166,7 @@ function RouteComponent() {
                     <td className="p-4 text-sm font-medium">
                       v{contract.version}
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>

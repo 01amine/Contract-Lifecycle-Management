@@ -1,9 +1,14 @@
 import { useHeader } from "@/stores/header";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
-import { ChevronRightIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  BrainIcon,
+  ShieldCheckIcon,
+  CheckCircle2Icon,
+} from "lucide-react";
 import {
   mockClauseSuggestions,
   mockTemplates,
@@ -15,6 +20,11 @@ import { TextEditor } from "@/components/editor/text-editor";
 import { ClauseSuggestions } from "@/components/editor/clause-suggestions";
 import { TemplateDialog } from "@/components/editor/template-dialog";
 import { AnimatePresence, motion } from "motion/react";
+import { contractActions } from "@/actions/contracts";
+import ContractProcessingStepper from "@/components/upload/contract-processing-stepper";
+import ContractProcessingStage from "@/components/upload/contract-processing-stage";
+import ContractProcessingComplete from "@/components/upload/contract-processing-complete";
+import { useMutation } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/(app)/contracts/create/write")({
   component: RouteComponent,
@@ -25,8 +35,58 @@ interface DraftMetadata {
   category: string;
 }
 
+type ProcessingStep = "draft" | "segmentation" | "compliance" | "complete";
+
+const processingSteps = [
+  {
+    id: "draft",
+    label: "Draft",
+    title: "Writing Contract",
+    icon: ChevronRightIcon,
+  },
+  {
+    id: "segmentation",
+    label: "AI Segmentation",
+    title: "Segmenting Contract and reading clauses",
+    icon: BrainIcon,
+  },
+  {
+    id: "compliance",
+    label: "Compliance Check",
+    title: "Checking for Compliance and matching with policies",
+    icon: ShieldCheckIcon,
+  },
+  {
+    id: "complete",
+    label: "Completion",
+    title: null,
+    icon: CheckCircle2Icon,
+  },
+];
+
+// Mock function to fetch suggestions - replace with actual API call later
+const fetchSuggestions = async (
+  content: string,
+  query?: string
+): Promise<ClauseSuggestion[]> => {
+  console.log(`Analyzing ${content.length} characters for suggestions...`);
+  console.log(`Query: ${query}`);
+
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 3);
+};
+
 function RouteComponent() {
-  useHeader("Drafting a new contract");
+  const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState<ProcessingStep>("draft");
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [contractId, setContractId] = useState<string | null>(null);
+  const [contractData, setContractData] = useState<any>(null);
+  const [clausesData, setClausesData] = useState<any>(null);
+  const [complianceData, setComplianceData] = useState<any>(null);
 
   const [metadata, setMetadata] = useState<DraftMetadata>({
     title: "",
@@ -35,7 +95,14 @@ function RouteComponent() {
   const [content, setContent] = useState("");
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+
+  const currentStepLabel = processingSteps.find(
+    (s) => s.id === currentStep
+  )?.title;
+
+  useHeader("Drafting a new contract");
+  useHeader(currentStepLabel || null, 1);
 
   const { confirmDialog, confirm } = useConfirm({
     title: "Load Template?",
@@ -43,6 +110,35 @@ function RouteComponent() {
       "This will replace your current draft. Are you sure you want to continue?",
     destructive: false,
   });
+
+  // Mutation for fetching suggestions
+  const suggestionsMutation = useMutation({
+    mutationFn: ({ content, query }: { content: string; query?: string }) =>
+      fetchSuggestions(content, query),
+    onError: (error) => {
+      console.error("Failed to fetch suggestions:", error);
+    },
+  });
+
+  // Debounced effect to fetch suggestions after 10 seconds of inactivity
+  useEffect(() => {
+    // Only fetch suggestions if there's content and we're in draft mode
+    if (!content.trim() || currentStep !== "draft") {
+      return;
+    }
+
+    // Set up a debounce timer
+    const timer = setTimeout(() => {
+      console.log("Fetching suggestions for content...");
+      suggestionsMutation.mutate({ content });
+    }, 5000); // 5 seconds
+
+    // Cleanup function to clear the timer if content changes
+    return () => {
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, currentStep]);
 
   const handleInsertClause = (clause: ClauseSuggestion) => {
     const newContent =
@@ -81,6 +177,159 @@ function RouteComponent() {
     setIsTemplateDialogOpen(false);
   };
 
+  const handleContinue = async () => {
+    if (!content.trim()) {
+      setError("Please write some contract content before continuing");
+      return;
+    }
+
+    setError(null);
+
+    try {
+      // Step 1: Upload content
+      setCurrentStep("segmentation");
+      setProgress(20);
+
+      const fileName = metadata.title
+        ? `${metadata.title.replace(/[^a-zA-Z0-9]/g, "_")}.txt`
+        : "draft_contract.txt";
+
+      const uploadedContract = await contractActions.uploadContractContent(
+        content,
+        fileName
+      );
+      console.log("Upload response:", uploadedContract);
+
+      const contractId = uploadedContract._id || null;
+
+      if (!contractId) {
+        throw new Error(
+          "No contract ID returned from server. Response: " +
+            JSON.stringify(uploadedContract)
+        );
+      }
+
+      setContractId(contractId);
+      setContractData(uploadedContract);
+      setProgress(30);
+
+      // Step 2: Extract clauses
+      setProgress(50);
+      const clauses = await contractActions.extractClauses(contractId);
+      console.log("Clauses response:", clauses);
+      setClausesData(clauses);
+      setProgress(100);
+
+      // Wait a bit before moving to compliance
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Step 3: Compliance Check
+      setCurrentStep("compliance");
+      setProgress(0);
+      setProgress(30);
+
+      const complianceResult = await contractActions.complianceCheck(
+        contractId
+      );
+      console.log("Compliance response:", complianceResult);
+      setComplianceData(complianceResult);
+      setProgress(100);
+
+      // Wait a bit before showing complete
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Step 4: Complete
+      setCurrentStep("complete");
+      setProgress(100);
+    } catch (err) {
+      console.error("Processing error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred during processing. Please try again."
+      );
+      setCurrentStep("draft");
+      setProgress(0);
+    }
+  };
+
+  const handleAskAI = (query: string) => {
+    suggestionsMutation.mutate({ content, query });
+    setCurrentStep("draft");
+    setProgress(0);
+  };
+
+  if (currentStep !== "draft") {
+    return (
+      <div className="space-y-6">
+        {/* Progress Steps */}
+        <AnimatePresence mode="wait">
+          <ContractProcessingStepper
+            steps={processingSteps}
+            currentStep={currentStep}
+            progress={progress}
+          />
+        </AnimatePresence>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 border border-destructive/50 bg-destructive/10 rounded-xl text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* Processing Stages */}
+        <AnimatePresence mode="wait">
+          {currentStep === "segmentation" && (
+            <ContractProcessingStage
+              key="segmentation"
+              icon={BrainIcon}
+              title="Segmenting Contract and reading clauses"
+              description="AI is analyzing your written contract..."
+              progress={progress}
+              animationType="rotate"
+            />
+          )}
+
+          {currentStep === "compliance" && (
+            <ContractProcessingStage
+              key="compliance"
+              icon={ShieldCheckIcon}
+              title="Compliance Check"
+              description="Verifying legal and policies compliance..."
+              progress={progress}
+              animationType="scale"
+            />
+          )}
+
+          {currentStep === "complete" && (
+            <ContractProcessingComplete
+              key="complete"
+              contractId={contractId}
+              contractData={contractData}
+              clausesData={clausesData}
+              complianceData={complianceData}
+              onViewContract={() =>
+                contractId && navigate({ to: `/contracts/${contractId}` })
+              }
+              onUploadAnother={() => {
+                setCurrentStep("draft");
+                setContent("");
+                setMetadata({ title: "", category: "" });
+                setProgress(0);
+                setContractId(null);
+                setContractData(null);
+                setClausesData(null);
+                setComplianceData(null);
+              }}
+              onGoToContracts={() => navigate({ to: "/contracts" })}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="grid gap-4 h-[calc(95vh-5rem)]"
@@ -93,6 +342,13 @@ function RouteComponent() {
     >
       {/* Main Editor */}
       <motion.div className="space-y-4" layout>
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 border border-destructive/50 bg-destructive/10 rounded-xl text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
         <MetadataForm
           metadata={metadata}
           onMetadataChange={setMetadata}
@@ -109,8 +365,17 @@ function RouteComponent() {
 
         {/* Compliance & Actions */}
         <div className="flex items-center justify-end gap-2">
-          <Button variant="outline">Cancel</Button>
-          <Button variant="default">
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/contracts/create" })}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="default"
+            onClick={handleContinue}
+            disabled={!content.trim()}
+          >
             Continue <ChevronRightIcon className="size-4" />
           </Button>
         </div>
@@ -127,8 +392,10 @@ function RouteComponent() {
             exit={{ opacity: 0 }}
           >
             <ClauseSuggestions
-              suggestions={mockClauseSuggestions}
+              suggestions={suggestionsMutation.data || []}
               onInsertClause={handleInsertClause}
+              onAskAI={handleAskAI}
+              isLoading={suggestionsMutation.isPending}
             />
           </motion.div>
         )}

@@ -65,7 +65,6 @@ export default function UploadProcessingStage({
             transition={{ duration: 0.3 }}
           />
         </div>
-        <p className="text-sm text-muted-foreground mt-2">{progress}%</p>
       </div>
     </motion.div>
   );

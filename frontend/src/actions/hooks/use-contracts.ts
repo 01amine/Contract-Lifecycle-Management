@@ -73,7 +73,9 @@ export function useUpdateContractStatus() {
       contractActions.updateContractStatus(id, status),
     onSuccess: (data) => {
       // Invalidate the specific contract and related queries
-      queryClient.invalidateQueries({ queryKey: contractKeys.detail(data.id) });
+      queryClient.invalidateQueries({
+        queryKey: contractKeys.detail(data._id),
+      });
       queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
       queryClient.invalidateQueries({ queryKey: contractKeys.stats() });
     },
