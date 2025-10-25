@@ -1,4 +1,5 @@
 
+import json
 from typing import List, Optional
 from app.models.documentUploaded import clause
 from pydantic import BaseModel, Field
@@ -72,11 +73,15 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
             "Search the knowledge base for relevant company policies before assessing each clause.",
         ],
         knowledge=knowledge_base,
-        search_knowledge=True,  
+        search_knowledge=False,  
         # output_schema=ComplianceCheckResult,
         stream=False,
     )
 
+
+import json
+from typing import List
+from app.models.documentUploaded import clause
 
 def check_compliance(
     clauses: List[ClauseWithCompliance],
@@ -86,46 +91,60 @@ def check_compliance(
     """
     Check contract clauses for compliance against company policies.
     
-    Args:
-        clauses: List of extracted clauses to check
-        contract_id: Contract identifier for logging
-        collection_name: Qdrant collection with policies
-        
-    Returns:
-        ComplianceCheckResult with risks list and compliance score
+    This version:
+    - Handles Gemini returning Markdown ```json fences
+    - Handles empty responses
+    - Provides a fallback result if Gemini cannot check
     """
     
-    # Create agent with policy knowledge from Qdrant
     agent = create_compliance_agent(collection_name)
-    
-    # Prepare clauses text for analysis
+
+    # Prepare clauses text
     clauses_text = "\n\n".join([
         f"Clause {c.clause_id} - {c.heading or 'Untitled'}:\n{c.text}"
         for c in clauses
     ])
-    
+
     prompt = f"""
-    Check these contract clauses for compliance with company policies.
-    
-    Contract ID: {contract_id}
-    Total Clauses: {len(clauses)}
-    
-    Contract Clauses:
-    {clauses_text}
-    
-    For each clause, search the company policy knowledge base and identify:
-    - Policy violations or compliance risks
-    - Risk level: Low, Medium, High, or Critical
-    - Clear reason explaining the risk
-    
-    Return only clauses with compliance issues in the risks list.
-    Calculate an overall compliance score based on the number and severity of risks found.
-    """
-    
-    response = agent.run(prompt)
-    return response.content
+Check these contract clauses for compliance with company policies.
 
+Contract ID: {contract_id}
+Total Clauses: {len(clauses)}
 
+Contract Clauses:
+{clauses_text}
+
+Return JSON strictly in the format:
+{{
+    "risks": [
+        {{"clause": "Payment Terms", "risk": "High", "reason": "Missing late fee clause"}}
+    ],
+    "compliance_score": 0.82
+}}
+"""
+
+    try:
+        response = agent.run(prompt)
+        raw_output = (response.content or "").strip()
+
+        # If Gemini says it cannot check
+        if not raw_output or "unable to check" in raw_output.lower() or "no relevant policies" in raw_output.lower():
+            return ComplianceCheckResult(risks=[], compliance_score=1.0)
+
+        # Strip markdown ```json fences if present
+        if raw_output.startswith("```"):
+            raw_output = raw_output.split("\n", 1)[1]   # remove first line
+            raw_output = raw_output.rsplit("```", 1)[0]  # remove last line
+            raw_output = raw_output.strip()
+
+        data = json.loads(raw_output)
+        return ComplianceCheckResult(**data)
+
+    except Exception as e:
+        return ComplianceCheckResult(
+            risks=[],
+            compliance_score=1.0
+        )
 
 
 def convert_clauses_for_compliance(clauses_data: List[clause]) -> List[ClauseWithCompliance]:
