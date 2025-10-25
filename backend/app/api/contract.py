@@ -15,7 +15,7 @@ from app.models.documentUploaded import ContractDocument, ContractStatus
 from app.services.extractor import DocumentExtractor, document_extraction_worker
 from app.repositories.contract import ContractRepository
 from app.services.agent import agent
-from app.services.segmenter import ClauseSegmenter
+from app.services.segmenter import  extract_clauses
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -147,82 +147,39 @@ async def upload_contract(
 
 
 @router.post("/{contract_id}/extract-clauses")
-async def extract_clauses(contract_id: str):
+async def extract_clauses_endpoint(contract_id: PydanticObjectId):    
     contract = await ContractRepository.get_contract_by_id(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
-
     raw_text = contract.content
     extraction_performed = False
-
     if not raw_text:
         if not contract.file_name:
-            raise HTTPException(status_code=400, detail="Contract does not have file name for extraction.")
+            raise HTTPException(status_code=400, detail="No file name")
 
         doc_bucket = DocumentBucket(file_prefix="contracts")
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(contract.file_name).suffix) as tmp_file:
-            try:
-                object_name = contract.file_name
-                await doc_bucket.get(object_name=object_name, dest_file_path=tmp_file.name)
-
-                raw_text = document_extraction_worker(tmp_file.name)
-
-                if raw_text.startswith("Error:") or "CRITICAL WORKER FAILURE" in raw_text:
-                    raise Exception(raw_text)
-
-                await contract.update(
-                    {"$set": {
-                        "content": raw_text,
-                        "status": ContractStatus.UNDER_REVIEW
-                    }}
-                )
-                extraction_performed = True
-            except Exception as e:
-                await contract.update(
-                    {"$set": {"status": ContractStatus.REJECTED}}
-                )
-                Path(tmp_file.name).unlink(missing_ok=True)
-                raise HTTPException(status_code=500, detail=f"Document extraction failed: {e}")
-            finally:
-                Path(tmp_file.name).unlink(missing_ok=True)
-
-    if not raw_text:
-         raise HTTPException(status_code=500, detail="Could not retrieve or extract raw text for segmentation.")
-
     try:
-        segmenter_service = ClauseSegmenter()
-
-        segmented_clauses = segmenter_service.segment_text_with_llm(raw_text)
-
-        clauses_data = [
-            {
-                "text": c.text,
-                "clause_id": c.clause_id,
-                "level": c.level,
-                "start_pos": c.start_pos,
-                "heading": c.heading
-            } for c in segmented_clauses
-        ]
-
-        await contract.update(
-            {"$set": {
+        result = extract_clauses(raw_text)
+        clauses_data = [clause.model_dump() for clause in result.clauses]
+        await contract.update({
+            "$set": {
                 "clauses": clauses_data,
                 "status": ContractStatus.UNDER_REVIEW
-            }}
-        )
+            }
+        })
 
         return {
-            "status": "segmentation_complete",
-            "message": f"Raw text {'extracted and ' if extraction_performed else ''}segmented into {len(clauses_data)} clauses using the LLM agent logic.",
-            "total_clauses": len(clauses_data)
+            "status": "success",
+            "message": f"{'Extracted and ' if extraction_performed else ''}segmented into {result.total_clauses} clauses",
+            "total_clauses": result.total_clauses
         }
 
     except Exception as e:
-        await contract.update(
-            {"$set": {"status": ContractStatus.REJECTED}}
-        )
-        raise HTTPException(status_code=500, detail=f"Clause segmentation failed: {e}")
+        await contract.update({"$set": {"status": ContractStatus.REJECTED}})
+        raise HTTPException(status_code=500, detail=f"Clause extraction failed: {e}")
+    
+
+
 @router.post("/{contract_id}/compliance-check")
 async def compliance_check(contract_id: str):
     fake_risks = [
