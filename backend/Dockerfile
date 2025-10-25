@@ -35,7 +35,10 @@ RUN uv pip install --system \
     qdrant-client \
     pdfminer-six\
     pytesseract\
-    pypdfium2
+    pypdfium2\
+    agno\
+    openai\
+    google-genai
 
 # Expose port
 EXPOSE 8000
