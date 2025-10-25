@@ -108,21 +108,34 @@ async def get_signed_url():
     """
     return HTMLResponse(content=html)
 
-
-@router.post("/upload-contract", description="Upload contract image, PDF, text, or handwriting")
+@router.post("/upload-contract", description="Upload contract image, PDF, text, or handwriting",response_model=ContractDocument)
 async def upload_contract(
     request: Request,
     file: Optional[UploadFile] = File(None),
     content: Optional[str] = Body(None),
 ):
-    document_extract: DocumentExtractor = request.app.state.document_extract
+    if not file and not content:
+        return {"error": "Either a file or content must be provided."}
 
+    document_extract: DocumentExtractor = request.app.state.document_extract
+    doc_bucket = DocumentBucket(file_prefix="contracts")
+
+    
     if file:
         with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp_file:
             tmp_file.write(await file.read())
             tmp_file_path = tmp_file.name
-
         path_obj = Path(tmp_file_path)
-
+        file_id= await doc_bucket.put(file=file, object_name=file.filename)
         extracted_data: str = document_extract.extract(path_obj)
-        return { "extracted_data": extracted_data}
+        path_obj.unlink()
+    contract_doc = ContractDocument(
+        file_name=file.filename if file.filename else f"contract_{file_id}.pdf",
+        file_id=file_id,
+        extracted_data=extracted_data,
+        content=content if content else None,
+    )
+    await contract_doc.insert()
+
+    return contract_doc.model_dump()
+
