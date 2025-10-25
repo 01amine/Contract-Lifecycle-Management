@@ -60,16 +60,7 @@ export function PoliciesList({
         isPending={updatePolicy.isPending}
       />
 
-      <div className="p-6 border rounded-xl shadow-island bg-card min-h-[calc(90vh-5rem)] mb-2 flex flex-col">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold font-title tracking-tight">
-            Your Policies
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage and organize your contract templates and compliance policies
-          </p>
-        </div>
-
+      <div className="px-6 py-4 border rounded-xl shadow-island bg-card min-h-[calc(90vh-5rem)] mb-2 flex flex-col">
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {isLoading && (
             <div className="flex items-center justify-center py-12">

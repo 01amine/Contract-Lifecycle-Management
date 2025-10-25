@@ -16,6 +16,7 @@ import { Route as appSettingsRouteImport } from './routes/(app)/settings'
 import { Route as appProfileRouteImport } from './routes/(app)/profile'
 import { Route as appPoliciesRouteImport } from './routes/(app)/policies'
 import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
+import { Route as appAiChatRouteImport } from './routes/(app)/ai-chat'
 import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
 import { Route as appContractsCreateRouteImport } from './routes/(app)/contracts.create'
 import { Route as appContractsIdRouteImport } from './routes/(app)/contracts.$id'
@@ -54,6 +55,11 @@ const appDashboardRoute = appDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appAiChatRoute = appAiChatRouteImport.update({
+  id: '/ai-chat',
+  path: '/ai-chat',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appContractsIndexRoute = appContractsIndexRouteImport.update({
   id: '/contracts/',
   path: '/contracts/',
@@ -73,6 +79,7 @@ const appContractsIdRoute = appContractsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/not-found': typeof NotFoundRoute
+  '/ai-chat': typeof appAiChatRoute
   '/dashboard': typeof appDashboardRoute
   '/policies': typeof appPoliciesRoute
   '/profile': typeof appProfileRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/not-found': typeof NotFoundRoute
+  '/ai-chat': typeof appAiChatRoute
   '/dashboard': typeof appDashboardRoute
   '/policies': typeof appPoliciesRoute
   '/profile': typeof appProfileRoute
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/(app)': typeof appRouteRouteWithChildren
   '/not-found': typeof NotFoundRoute
+  '/(app)/ai-chat': typeof appAiChatRoute
   '/(app)/dashboard': typeof appDashboardRoute
   '/(app)/policies': typeof appPoliciesRoute
   '/(app)/profile': typeof appProfileRoute
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/not-found'
+    | '/ai-chat'
     | '/dashboard'
     | '/policies'
     | '/profile'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/not-found'
+    | '/ai-chat'
     | '/dashboard'
     | '/policies'
     | '/profile'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/(app)'
     | '/not-found'
+    | '/(app)/ai-chat'
     | '/(app)/dashboard'
     | '/(app)/policies'
     | '/(app)/profile'
@@ -199,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appDashboardRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/ai-chat': {
+      id: '/(app)/ai-chat'
+      path: '/ai-chat'
+      fullPath: '/ai-chat'
+      preLoaderRoute: typeof appAiChatRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/contracts/': {
       id: '/(app)/contracts/'
       path: '/contracts'
@@ -224,6 +243,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface appRouteRouteChildren {
+  appAiChatRoute: typeof appAiChatRoute
   appDashboardRoute: typeof appDashboardRoute
   appPoliciesRoute: typeof appPoliciesRoute
   appProfileRoute: typeof appProfileRoute
@@ -234,6 +254,7 @@ interface appRouteRouteChildren {
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
+  appAiChatRoute: appAiChatRoute,
   appDashboardRoute: appDashboardRoute,
   appPoliciesRoute: appPoliciesRoute,
   appProfileRoute: appProfileRoute,

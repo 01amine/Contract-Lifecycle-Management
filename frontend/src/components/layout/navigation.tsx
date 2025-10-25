@@ -4,6 +4,7 @@ import {
   ClipboardListIcon,
   LayoutDashboardIcon,
   LogOutIcon,
+  MessageCircleQuestionIcon,
   PlusIcon,
   ScaleIcon,
   SettingsIcon,
@@ -28,6 +29,11 @@ const topNavItems = [
     icon: ScaleIcon,
     label: "Policies",
     to: "/policies",
+  },
+  {
+    icon: MessageCircleQuestionIcon,
+    label: "Ai Chat",
+    to: "/ai-chat",
   },
   {
     icon: SettingsIcon,
