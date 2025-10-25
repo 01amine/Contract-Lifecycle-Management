@@ -1,6 +1,6 @@
 
 from typing import List, Optional
-from models.documentUploaded import clause
+from app.models.documentUploaded import clause
 from pydantic import BaseModel, Field
 from agno.agent import Agent
 from agno.models.google import Gemini
