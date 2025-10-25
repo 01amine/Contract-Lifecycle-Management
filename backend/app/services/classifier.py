@@ -2,8 +2,8 @@ import re
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass, field
 from functools import lru_cache
-from ..dto.risk import ClassifiedClause, ClauseType
-from ..services.segmenter import Clause_cl
+from app.dto.risk import ClassifiedClause, ClauseType
+from app.services.segmenter import Clause_cl
 
 
 @dataclass

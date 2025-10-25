@@ -6,7 +6,7 @@ from pdfminer.high_level import extract_text as pdfminer_extract_text
 import pytesseract
 from PIL import Image
 import pypdfium2 as pdfium 
-from ..config import get_config, Config 
+from app.config import get_config, Config 
 
 
 class DocumentExtractor:

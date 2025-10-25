@@ -18,6 +18,7 @@ from app.models.policy import Template
 from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
 from app.models.documentUploaded import ContractDocument
+from app.services.extractor import DocumentExtractor
 
 
 mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
@@ -30,6 +31,9 @@ async def init_mongo():
 async def init_qdrant():
     client =AsyncQdrantClient(url=settings.QDRANT_URL, port=6333)
     return client
+
+async def init_ocr():
+    DocumentExtractor()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
