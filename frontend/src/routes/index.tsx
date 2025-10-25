@@ -10,7 +10,7 @@ function App() {
     <div className="min-h-screen flex flex-col items-center justify-center text-center">
       <h1 className="text-2xl font-bold mb-4">Make landing page</h1>
       <div className="flex gap-4">
-        <Link to="/contracts">
+        <Link to="/dashboard">
           <Button>Dashboard</Button>
         </Link>
         <Link to="/contracts">
