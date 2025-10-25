@@ -1,6 +1,4 @@
-from ast import List
-from dataclasses import asdict
-from datetime import datetime
+
 import tempfile
 from typing import Generator, Optional
 import uuid
@@ -8,14 +6,14 @@ from pathlib import Path
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
-from pydantic import BaseModel
-
 from app.minio import DocumentBucket
 from app.models.documentUploaded import ContractDocument, ContractStatus
 from app.services.extractor import DocumentExtractor, document_extraction_worker
 from app.repositories.contract import ContractRepository
 from app.services.agent import agent
-from app.services.segmenter import ClauseSegmenter
+from app.services.segmenter import  extract_clauses
+from app.services.consistency_checker import check_compliance, convert_clauses_for_compliance
+from app.services.compliance_with_prompt import check_compliance_pompt
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -125,6 +123,7 @@ async def upload_contract(
         return {"error": "Either a file or content must be provided."}
 
     document_extract: DocumentExtractor = request.app.state.document_extract
+    print(document_extract)
     doc_bucket = DocumentBucket(file_prefix="contracts")
 
     
@@ -141,102 +140,152 @@ async def upload_contract(
         file_id=file_id,
         content=content if content else extracted_data,
     )
+    print(contract_doc)
     await contract_doc.insert()
 
     return contract_doc.model_dump()
 
 
 @router.post("/{contract_id}/extract-clauses")
-async def extract_clauses(contract_id: str):
+async def extract_clauses_endpoint(contract_id: PydanticObjectId):
     contract = await ContractRepository.get_contract_by_id(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
 
     raw_text = contract.content
+    print(raw_text)
     extraction_performed = False
-
     if not raw_text:
         if not contract.file_name:
-            raise HTTPException(status_code=400, detail="Contract does not have file name for extraction.")
-
-        doc_bucket = DocumentBucket(file_prefix="contracts")
-
-        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(contract.file_name).suffix) as tmp_file:
-            try:
-                object_name = contract.file_name
-                await doc_bucket.get(object_name=object_name, dest_file_path=tmp_file.name)
-
-                raw_text = document_extraction_worker(tmp_file.name)
-
-                if raw_text.startswith("Error:") or "CRITICAL WORKER FAILURE" in raw_text:
-                    raise Exception(raw_text)
-
-                await contract.update(
-                    {"$set": {
-                        "content": raw_text,
-                        "status": ContractStatus.UNDER_REVIEW
-                    }}
-                )
-                extraction_performed = True
-            except Exception as e:
-                await contract.update(
-                    {"$set": {"status": ContractStatus.REJECTED}}
-                )
-                Path(tmp_file.name).unlink(missing_ok=True)
-                raise HTTPException(status_code=500, detail=f"Document extraction failed: {e}")
-            finally:
-                Path(tmp_file.name).unlink(missing_ok=True)
-
-    if not raw_text:
-         raise HTTPException(status_code=500, detail="Could not retrieve or extract raw text for segmentation.")
+            raise HTTPException(status_code=400, detail="No file name")
 
     try:
-        segmenter_service = ClauseSegmenter()
+        result = extract_clauses(raw_text)
+        clauses_data = [clause.model_dump() for clause in result.clauses]
 
-        segmented_clauses = segmenter_service.segment_text_with_llm(raw_text)
-
-        clauses_data = [
-            {
-                "text": c.text,
-                "clause_id": c.clause_id,
-                "level": c.level,
-                "start_pos": c.start_pos,
-                "heading": c.heading
-            } for c in segmented_clauses
-        ]
-
-        await contract.update(
-            {"$set": {
+        await contract.update({
+            "$set": {
                 "clauses": clauses_data,
                 "status": ContractStatus.UNDER_REVIEW
-            }}
-        )
+            }
+        })
 
-        return {
-            "status": "segmentation_complete",
-            "message": f"Raw text {'extracted and ' if extraction_performed else ''}segmented into {len(clauses_data)} clauses using the LLM agent logic.",
-            "total_clauses": len(clauses_data)
-        }
+        return clauses_data
 
     except Exception as e:
-        await contract.update(
-            {"$set": {"status": ContractStatus.REJECTED}}
-        )
-        raise HTTPException(status_code=500, detail=f"Clause segmentation failed: {e}")
+        await contract.update({"$set": {"status": ContractStatus.REJECTED}})
+        raise HTTPException(status_code=500, detail=f"Clause extraction failed: {e}")
+    
+    
 @router.post("/{contract_id}/compliance-check")
-async def compliance_check(contract_id: str):
-    fake_risks = [
-        {"clause": "Termination", "risk": "High", "reason": "No compensation clause for early termination"},
-        {"clause": "Payment Terms", "risk": "Low", "reason": "Within acceptable policy range"}
-    ]
+async def compliance_check_endpoint(contract_id: PydanticObjectId):
+   
+    
+    contract = await ContractRepository.get_contract_by_id(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    
+    if not contract or len(contract.clauses) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No clauses found. Run extraction first."
+        )
+    
+    try:
+        clauses = convert_clauses_for_compliance(contract.clauses)
+        
+        result = check_compliance(
+            clauses=clauses,
+            contract_id=str(contract_id),
+            collection_name="company_policies"
+        )
+        
+        risks = [risk.model_dump() for risk in result.risks]
+        compliance_score = result.compliance_score
+        
+        if compliance_score >= 0.9:
+            new_status = ContractStatus.APPROVED
+        elif compliance_score >= 0.7:
+            new_status = ContractStatus.UNDER_REVIEW
+        else:
+            new_status = ContractStatus.UNDER_REVIEW
+        
+        await contract.update({
+            "$set": {
+                "risks": risks,
+                "compliance_score": compliance_score,
+                "status": new_status,
+            }
+        })
+        
+        return {
+            "risks": risks,
+            "compliance_score": compliance_score
+        }
+        
+    except Exception as e:
+        await contract.update({
+            "$set": {"status": ContractStatus.REJECTED}
+        })
+        raise HTTPException(
+            status_code=500,
+            detail=f"Compliance check failed: {str(e)}"
+        )
+        
 
-    compliance_score = 0.85
-    await ContractDocument.find_one({"file_id": contract_id}).update(
-        {"$set": {"risks": fake_risks, "compliance_score": compliance_score, "status": "compliance_pending"}}
-    )
-
-    return {"status": "compliance_pending", "compliance_score": compliance_score, "issues": fake_risks}
-
+@router.post("/{contract_id}/compliance-check-plus-prompt")
+async def compliance_check_endpoint(contract_id: PydanticObjectId,user_prompt: str = Body(...)): 
+    contract = await ContractRepository.get_contract_by_id(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    
+    if not contract or len(contract.clauses) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No clauses found. Run extraction first."
+        )
+    
+    try:
+        clauses = convert_clauses_for_compliance(contract.clauses)
+        
+        result = check_compliance_pompt(
+            clauses=clauses,
+            contract_id=str(contract_id),
+            collection_name="company_policies",
+            user_prompt=user_prompt
+        )
+        
+        risks = [risk.model_dump() for risk in result.risks]
+        compliance_score = result.compliance_score
+        
+        if compliance_score >= 0.9:
+            new_status = ContractStatus.APPROVED
+        elif compliance_score >= 0.7:
+            new_status = ContractStatus.UNDER_REVIEW
+        else:
+            new_status = ContractStatus.UNDER_REVIEW
+        
+        await contract.update({
+            "$set": {
+                "risks": risks,
+                "compliance_score": compliance_score,
+                "status": new_status,
+            }
+        })
+        
+        return {
+            "risks": risks,
+            "compliance_score": compliance_score
+        }
+        
+    except Exception as e:
+        await contract.update({
+            "$set": {"status": ContractStatus.REJECTED}
+        })
+        raise HTTPException(
+            status_code=500,
+            detail=f"Compliance check failed: {str(e)}"
+        )
 
 @router.get("/{contract_id}", response_model=ContractDocument)
 async def get_contract(contract_id: PydanticObjectId):
