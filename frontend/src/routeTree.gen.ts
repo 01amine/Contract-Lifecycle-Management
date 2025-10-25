@@ -11,13 +11,19 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as appRouteRouteImport } from './routes/(app)/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as appUploadRouteImport } from './routes/(app)/upload'
+import { Route as appTemplatesRouteImport } from './routes/(app)/templates'
 import { Route as appSettingsRouteImport } from './routes/(app)/settings'
+import { Route as appReviewRouteImport } from './routes/(app)/review'
 import { Route as appRegulationsRouteImport } from './routes/(app)/regulations'
 import { Route as appProfileRouteImport } from './routes/(app)/profile'
+import { Route as appDraftRouteImport } from './routes/(app)/draft'
 import { Route as appDashboardRouteImport } from './routes/(app)/dashboard'
+import { Route as appAssistantRouteImport } from './routes/(app)/assistant'
 import { Route as appContractsIndexRouteImport } from './routes/(app)/contracts.index'
 import { Route as appContractsCreateRouteImport } from './routes/(app)/contracts.create'
 import { Route as appContractsIdRouteImport } from './routes/(app)/contracts.$id'
+import { Route as appCompareIdRouteImport } from './routes/(app)/compare.$id'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
@@ -28,9 +34,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const appUploadRoute = appUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appTemplatesRoute = appTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appSettingsRoute = appSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appReviewRoute = appReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appRegulationsRoute = appRegulationsRouteImport.update({
@@ -43,9 +64,19 @@ const appProfileRoute = appProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appDraftRoute = appDraftRouteImport.update({
+  id: '/draft',
+  path: '/draft',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appDashboardRoute = appDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appAssistantRoute = appAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appContractsIndexRoute = appContractsIndexRouteImport.update({
@@ -63,23 +94,40 @@ const appContractsIdRoute = appContractsIdRouteImport.update({
   path: '/contracts/$id',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appCompareIdRoute = appCompareIdRouteImport.update({
+  id: '/compare/$id',
+  path: '/compare/$id',
+  getParentRoute: () => appRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assistant': typeof appAssistantRoute
   '/dashboard': typeof appDashboardRoute
+  '/draft': typeof appDraftRoute
   '/profile': typeof appProfileRoute
   '/regulations': typeof appRegulationsRoute
+  '/review': typeof appReviewRoute
   '/settings': typeof appSettingsRoute
+  '/templates': typeof appTemplatesRoute
+  '/upload': typeof appUploadRoute
+  '/compare/$id': typeof appCompareIdRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
   '/contracts': typeof appContractsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assistant': typeof appAssistantRoute
   '/dashboard': typeof appDashboardRoute
+  '/draft': typeof appDraftRoute
   '/profile': typeof appProfileRoute
   '/regulations': typeof appRegulationsRoute
+  '/review': typeof appReviewRoute
   '/settings': typeof appSettingsRoute
+  '/templates': typeof appTemplatesRoute
+  '/upload': typeof appUploadRoute
+  '/compare/$id': typeof appCompareIdRoute
   '/contracts/$id': typeof appContractsIdRoute
   '/contracts/create': typeof appContractsCreateRoute
   '/contracts': typeof appContractsIndexRoute
@@ -88,10 +136,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/(app)': typeof appRouteRouteWithChildren
+  '/(app)/assistant': typeof appAssistantRoute
   '/(app)/dashboard': typeof appDashboardRoute
+  '/(app)/draft': typeof appDraftRoute
   '/(app)/profile': typeof appProfileRoute
   '/(app)/regulations': typeof appRegulationsRoute
+  '/(app)/review': typeof appReviewRoute
   '/(app)/settings': typeof appSettingsRoute
+  '/(app)/templates': typeof appTemplatesRoute
+  '/(app)/upload': typeof appUploadRoute
+  '/(app)/compare/$id': typeof appCompareIdRoute
   '/(app)/contracts/$id': typeof appContractsIdRoute
   '/(app)/contracts/create': typeof appContractsCreateRoute
   '/(app)/contracts/': typeof appContractsIndexRoute
@@ -100,20 +154,32 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/assistant'
     | '/dashboard'
+    | '/draft'
     | '/profile'
     | '/regulations'
+    | '/review'
     | '/settings'
+    | '/templates'
+    | '/upload'
+    | '/compare/$id'
     | '/contracts/$id'
     | '/contracts/create'
     | '/contracts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/assistant'
     | '/dashboard'
+    | '/draft'
     | '/profile'
     | '/regulations'
+    | '/review'
     | '/settings'
+    | '/templates'
+    | '/upload'
+    | '/compare/$id'
     | '/contracts/$id'
     | '/contracts/create'
     | '/contracts'
@@ -121,10 +187,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/(app)'
+    | '/(app)/assistant'
     | '/(app)/dashboard'
+    | '/(app)/draft'
     | '/(app)/profile'
     | '/(app)/regulations'
+    | '/(app)/review'
     | '/(app)/settings'
+    | '/(app)/templates'
+    | '/(app)/upload'
+    | '/(app)/compare/$id'
     | '/(app)/contracts/$id'
     | '/(app)/contracts/create'
     | '/(app)/contracts/'
@@ -151,11 +223,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(app)/upload': {
+      id: '/(app)/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof appUploadRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/templates': {
+      id: '/(app)/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof appTemplatesRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/settings': {
       id: '/(app)/settings'
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof appSettingsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/review': {
+      id: '/(app)/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof appReviewRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/regulations': {
@@ -172,11 +265,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appProfileRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/draft': {
+      id: '/(app)/draft'
+      path: '/draft'
+      fullPath: '/draft'
+      preLoaderRoute: typeof appDraftRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/dashboard': {
       id: '/(app)/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof appDashboardRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/assistant': {
+      id: '/(app)/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof appAssistantRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/contracts/': {
@@ -200,24 +307,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appContractsIdRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/compare/$id': {
+      id: '/(app)/compare/$id'
+      path: '/compare/$id'
+      fullPath: '/compare/$id'
+      preLoaderRoute: typeof appCompareIdRouteImport
+      parentRoute: typeof appRouteRoute
+    }
   }
 }
 
 interface appRouteRouteChildren {
+  appAssistantRoute: typeof appAssistantRoute
   appDashboardRoute: typeof appDashboardRoute
+  appDraftRoute: typeof appDraftRoute
   appProfileRoute: typeof appProfileRoute
   appRegulationsRoute: typeof appRegulationsRoute
+  appReviewRoute: typeof appReviewRoute
   appSettingsRoute: typeof appSettingsRoute
+  appTemplatesRoute: typeof appTemplatesRoute
+  appUploadRoute: typeof appUploadRoute
+  appCompareIdRoute: typeof appCompareIdRoute
   appContractsIdRoute: typeof appContractsIdRoute
   appContractsCreateRoute: typeof appContractsCreateRoute
   appContractsIndexRoute: typeof appContractsIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
+  appAssistantRoute: appAssistantRoute,
   appDashboardRoute: appDashboardRoute,
+  appDraftRoute: appDraftRoute,
   appProfileRoute: appProfileRoute,
   appRegulationsRoute: appRegulationsRoute,
+  appReviewRoute: appReviewRoute,
   appSettingsRoute: appSettingsRoute,
+  appTemplatesRoute: appTemplatesRoute,
+  appUploadRoute: appUploadRoute,
+  appCompareIdRoute: appCompareIdRoute,
   appContractsIdRoute: appContractsIdRoute,
   appContractsCreateRoute: appContractsCreateRoute,
   appContractsIndexRoute: appContractsIndexRoute,

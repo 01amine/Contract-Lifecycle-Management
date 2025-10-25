@@ -4,7 +4,11 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   PlusIcon,
-  Settings2Icon,
+  FileTextIcon,
+  UploadIcon,
+  SearchCheckIcon,
+  PenToolIcon,
+  BotIcon,
   SettingsIcon,
   User2,
 } from "lucide-react";
@@ -23,9 +27,29 @@ const topNavItems = [
     to: "/contracts",
   },
   {
-    icon: Settings2Icon,
-    label: "Regulations",
-    to: "/regulations",
+    icon: FileTextIcon,
+    label: "Templates",
+    to: "/templates",
+  },
+  {
+    icon: UploadIcon,
+    label: "Upload",
+    to: "/upload",
+  },
+  {
+    icon: SearchCheckIcon,
+    label: "Review",
+    to: "/review",
+  },
+  {
+    icon: PenToolIcon,
+    label: "Draft",
+    to: "/draft",
+  },
+  {
+    icon: BotIcon,
+    label: "AI Assistant",
+    to: "/assistant",
   },
   {
     icon: SettingsIcon,

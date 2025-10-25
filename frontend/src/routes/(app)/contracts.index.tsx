@@ -9,89 +9,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, ShieldCheckIcon } from "lucide-react";
 import { format } from "date-fns";
+import { mockContracts, type Contract } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,
 });
 
-type ProcessingStep = "all" | "pending" | "completed" | "discarded";
-
-interface Contract {
-  id: string;
-  title: string;
-  client: string;
-  date: string;
-  amount: string;
-  status: "pending" | "completed" | "discarded";
-}
-
-const mockContracts: Contract[] = [
-  {
-    id: "1",
-    title: "Software Development Agreement",
-    client: "Tech Corp Inc.",
-    date: "2024-01-15",
-    amount: "$50,000",
-    status: "pending",
-  },
-  {
-    id: "2",
-    title: "Marketing Services Contract",
-    client: "Marketing Solutions",
-    date: "2024-01-20",
-    amount: "$25,000",
-    status: "completed",
-  },
-  {
-    id: "3",
-    title: "Consulting Agreement",
-    client: "Business Consulting LLC",
-    date: "2024-02-01",
-    amount: "$35,000",
-    status: "pending",
-  },
-  {
-    id: "4",
-    title: "Non-Disclosure Agreement",
-    client: "StartupXYZ",
-    date: "2024-02-10",
-    amount: "$0",
-    status: "completed",
-  },
-  {
-    id: "5",
-    title: "Service Level Agreement",
-    client: "Enterprise Systems",
-    date: "2024-02-15",
-    amount: "$75,000",
-    status: "discarded",
-  },
-  {
-    id: "6",
-    title: "Vendor Agreement",
-    client: "Supply Chain Co.",
-    date: "2024-02-20",
-    amount: "$15,000",
-    status: "pending",
-  },
-];
+type StatusFilter = "all" | Contract["status"];
+type TypeFilter = "all" | Contract["type"];
 
 function RouteComponent() {
   useHeader("Your contracts");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  const [processingStep, setProcessingStep] = useState<ProcessingStep>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
 
   const filteredContracts = mockContracts.filter((contract) => {
     const matchesSearch =
       contract.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       contract.client.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDate = !dateFilter || contract.date === dateFilter;
-    const matchesStatus =
-      processingStep === "all" || contract.status === processingStep;
-    return matchesSearch && matchesDate && matchesStatus;
+    const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
+    const matchesType = typeFilter === "all" || contract.type === typeFilter;
+    return matchesSearch && matchesDate && matchesStatus && matchesType;
   });
 
   return (
@@ -114,17 +57,35 @@ function RouteComponent() {
           className="w-full sm:w-auto"
         />
         <Select
-          value={processingStep}
-          onValueChange={(value) => setProcessingStep(value as ProcessingStep)}
+          value={typeFilter}
+          onValueChange={(value) => setTypeFilter(value as TypeFilter)}
         >
           <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Processing step" />
+            <SelectValue placeholder="Contract type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All steps</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="discarded">Discarded</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="islamic-finance">Islamic Finance</SelectItem>
+            <SelectItem value="real-estate">Real Estate</SelectItem>
+            <SelectItem value="employment">Employment</SelectItem>
+            <SelectItem value="commercial">Commercial</SelectItem>
+            <SelectItem value="procurement">Procurement</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={statusFilter}
+          onValueChange={(value) => setStatusFilter(value as StatusFilter)}
+        >
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="under_review">Under Review</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="signed">Signed</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -135,7 +96,10 @@ function RouteComponent() {
             <thead>
               <tr className="border-b bg-muted/60">
                 <th className="text-left p-4 font-semibold text-sm text-primary">
-                  Title
+                  Contract
+                </th>
+                <th className="text-left p-4 font-semibold text-sm text-primary">
+                  Type
                 </th>
                 <th className="text-left p-4 font-semibold text-sm text-primary">
                   Client
@@ -145,6 +109,9 @@ function RouteComponent() {
                 </th>
                 <th className="text-left p-4 font-semibold text-sm text-primary">
                   Amount
+                </th>
+                <th className="text-left p-4 font-semibold text-sm text-primary">
+                  Compliance
                 </th>
                 <th className="text-left p-4 font-semibold text-sm text-primary">
                   Status
@@ -157,18 +124,26 @@ function RouteComponent() {
                   key={contract.id}
                   className={`transition-colors ${
                     index % 2 === 0
-                      ? "bg-card"
-                      : "bg-muted/50 hover:bg-muted/60"
+                      ? "bg-card hover:bg-muted/20"
+                      : "bg-muted/30 hover:bg-muted/40"
                   }`}
                 >
-                  <td className="p-4 text-sm font-medium">
+                  <td className="p-4 text-sm">
                     <Link
                       to="/contracts/$id"
                       params={{ id: contract.id }}
-                      className="hover:underline"
+                      className="font-medium hover:text-primary hover:underline"
                     >
                       {contract.title}
                     </Link>
+                    {contract.blockchainVerified && (
+                      <span className="ml-2 text-xs bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded">
+                        ⛓️ Verified
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-4 text-sm text-muted-foreground capitalize">
+                    {contract.type.replace("-", " ")}
                   </td>
                   <td className="p-4 text-sm text-muted-foreground">
                     {contract.client}
@@ -178,16 +153,34 @@ function RouteComponent() {
                   </td>
                   <td className="p-4 text-sm font-medium">{contract.amount}</td>
                   <td className="p-4 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheckIcon className={`size-4 ${
+                        contract.complianceScore >= 90 ? "text-green-600" :
+                        contract.complianceScore >= 75 ? "text-amber-500" :
+                        "text-red-600"
+                      }`} />
+                      <span className={`font-medium ${
+                        contract.complianceScore >= 90 ? "text-green-600" :
+                        contract.complianceScore >= 75 ? "text-amber-500" :
+                        "text-red-600"
+                      }`}>
+                        {contract.complianceScore}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-4 text-sm">
                     <span
-                      className={`px-2 py-1 rounded-md text-xs font-medium capitalize ${
-                        contract.status === "pending"
-                          ? "bg-amber-500/10 text-amber-600"
-                          : contract.status === "completed"
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium capitalize whitespace-nowrap ${
+                        contract.status === "approved" || contract.status === "signed"
                           ? "bg-green-500/10 text-green-600"
+                          : contract.status === "under_review"
+                          ? "bg-blue-500/10 text-blue-600"
+                          : contract.status === "draft"
+                          ? "bg-amber-500/10 text-amber-600"
                           : "bg-red-500/10 text-red-600"
                       }`}
                     >
-                      {contract.status}
+                      {contract.status.replace("_", " ")}
                     </span>
                   </td>
                 </tr>
