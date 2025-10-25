@@ -1,21 +1,23 @@
 import re
 from typing import List, Dict, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from app.services.llm_client import LLMClient
+from app.dto.ll import LLMClauseListDTO 
 
 @dataclass
 class Clause_cl:
     """Represents a single contract clause with metadata."""
     text: str
-    clause_id: str  
-    level: int  
-    start_pos: int  
-    heading: Optional[str] = None   
+    clause_id: str
+    level: int
+    start_pos: int
+    heading: Optional[str] = None
 
 
 class ClauseSegmenter:
     """
-    Analyzes raw text and splits it into discrete contractual clauses.
-    Handles multiple numbering schemes and structural patterns.
+    Analyzes raw text and splits it into discrete contractual clauses
+    using a Large Language Model..
     """
 
     def __init__(self, min_clause_length: int = 20, max_clause_length: int = 5000):
@@ -26,27 +28,13 @@ class ClauseSegmenter:
         """
         self.min_clause_length = min_clause_length
         self.max_clause_length = max_clause_length
-        
-        self.patterns = [
-            
-            (r'^\s*(\d+(?:\.\d+)*\.)\s+(.+?)$', 1),
-            
-            (r'^\s*((?:Article|Section|Clause)\s+\d+(?:\.\d+)*)[:\.\s]+(.+?)$', 1),
-            
-            (r'^\s*(\([a-z]{1,3}\)|\([ivxlcdm]+\))\s+(.+?)$', 2),
-            
-            (r'^\s*([A-Z][A-Z\s]{3,}(?:\d+)?)\s*[-:]?\s*$', 1),
-        ]
-        
-       
-        self.compiled_patterns = [
-            (re.compile(pattern, re.IGNORECASE | re.MULTILINE), level)
-            for pattern, level in self.patterns
-        ]
+        self.llm_client = LLMClient()
 
-    def segment_text(self, raw_text: str) -> List[Clause_cl]:
+
+    async def segment_text(self, raw_text: str) -> List[Clause_cl]:
         """
-        Splits the raw document text into clauses with metadata.
+        Splits the raw document text into clauses with metadata using the LLM.
+        NOTE: This method is now asynchronous to match the LLMClient.
 
         Args:
             raw_text: The full text of the contract.
@@ -57,98 +45,109 @@ class ClauseSegmenter:
         if not raw_text:
             return []
 
-        lines = raw_text.split('\n')
+        try:
+            # 1. Use LLM to get structured segmentation (now an async call)
+            clause_list_pydantic: LLMClauseListDTO = await self.llm_client.segment_document_structured(raw_text)
+
+            # 2. Map the structured Pydantic output back to the existing dataclass
+            # and calculate the start_pos based on the raw text.
+            clauses = []
+            current_pos = 0 # Track position to find clauses in order
+
+            for llm_clause in clause_list_pydantic.clauses:
+                # Find the starting position of the clause text in the raw document.
+                start_index = raw_text.find(llm_clause.text.strip(), current_pos)
+
+                if start_index != -1:
+                    clauses.append(Clause_cl(
+                        text=llm_clause.text.strip(),
+                        clause_id=llm_clause.clause_id,
+                        level=llm_clause.level,
+                        start_pos=start_index,
+                        heading=llm_clause.heading
+                    ))
+                    # Update current_pos to search for the next clause starting after the current one ends
+                    current_pos = start_index + len(llm_clause.text.strip())
+                else:
+                    print(f"Warning: Could not find clause text in document for ID: {llm_clause.clause_id}. Appending without accurate start_pos.")
+                    clauses.append(Clause_cl(
+                        text=llm_clause.text.strip(),
+                        clause_id=llm_clause.clause_id,
+                        level=llm_clause.level,
+                        start_pos=-1,
+                        heading=llm_clause.heading
+                    ))
+
+            # 3. Apply post-processing (e.g., merging short fragments)
+            clauses = self._split_long_clauses(clauses)
+            clauses = self._merge_short_fragments(clauses)
+
+            return clauses
+
+        except Exception as e:
+            print(f"Error during LLM-based segmentation: {e}")
+            # Fallback to simple segmentation if LLM fails
+            return self._fallback_segmentation(raw_text)
+
+    # --- Helper methods remain the same, ensure segment_text_simple is updated ---
+
+    def _fallback_segmentation(self, raw_text: str) -> List[Clause_cl]:
+        """A simple paragraph-based fallback in case the LLM call fails."""
+        print("Executing fallback segmentation.")
+        paragraphs = re.split(r'\n\s*\n', raw_text)
         clauses = []
-        current_clause_lines = []
-        current_id = "preamble"
-        current_level = 0
-        current_heading = None
-        start_pos = 0
-        current_pos = 0
-
-        for line in lines:
-            line_length = len(line) + 1  
-            matched = False
-            
-            
-            for pattern, level in self.compiled_patterns:
-                match = pattern.match(line)
-                if match:
-                    
-                    if current_clause_lines:
-                        clause_text = '\n'.join(current_clause_lines).strip()
-                        if len(clause_text) >= self.min_clause_length:
-                            clauses.append(Clause_cl(
-                                text=clause_text,
-                                clause_id=current_id,
-                                level=current_level,
-                                start_pos=start_pos,
-                                heading=current_heading
-                            ))
-                    
-                    
-                    current_id = match.group(1).strip()
-                    current_level = level
-                    current_heading = match.group(2).strip() if match.lastindex >= 2 else None
-                    current_clause_lines = [line]
-                    start_pos = current_pos
-                    matched = True
-                    break
-            
-            if not matched:
-                current_clause_lines.append(line)
-            
-            current_pos += line_length
-
-        
-        if current_clause_lines:
-            clause_text = '\n'.join(current_clause_lines).strip()
-            if len(clause_text) >= self.min_clause_length:
-                clauses.append(Clause_cl(
-                    text=clause_text,
-                    clause_id=current_id,
-                    level=current_level,
-                    start_pos=start_pos,
-                    heading=current_heading
+        start_pos_tracker = 0
+        for i, para in enumerate(paragraphs):
+            text = para.strip()
+            if len(text) >= self.min_clause_length:
+                 clauses.append(Clause_cl(
+                    text=text,
+                    clause_id=f"Fallback_{i+1}",
+                    level=1,
+                    start_pos=raw_text.find(text, start_pos_tracker),
+                    heading=None
                 ))
+            start_pos_tracker += len(para) + 2
 
-        
         clauses = self._split_long_clauses(clauses)
-        
-        
         clauses = self._merge_short_fragments(clauses)
-
         return clauses
 
+
     def _split_long_clauses(self, clauses: List[Clause_cl]) -> List[Clause_cl]:
-        """Split clauses that exceed max_clause_length by paragraph."""
+        """Split clauses that exceed max_clause_length by paragraph (Helper)."""
         result = []
         for clause in clauses:
             if len(clause.text) <= self.max_clause_length:
                 result.append(clause)
             else:
-                
                 paragraphs = re.split(r'\n\s*\n', clause.text)
+                current_start_offset = 0
                 for i, para in enumerate(paragraphs):
                     if para.strip():
+                        # Calculate accurate start_pos for sub-clauses
+                        sub_text = para.strip()
+                        start_offset = clause.text.find(sub_text, current_start_offset)
+                        current_start_offset = start_offset + len(sub_text)
+
                         result.append(Clause_cl(
-                            text=para.strip(),
+                            text=sub_text,
                             clause_id=f"{clause.clause_id}.{i+1}",
                             level=clause.level + 1,
-                            start_pos=clause.start_pos,
+                            start_pos=clause.start_pos + start_offset if start_offset != -1 else clause.start_pos,
                             heading=clause.heading if i == 0 else None
                         ))
         return result
 
     def _merge_short_fragments(self, clauses: List[Clause_cl]) -> List[Clause_cl]:
-        """Merge very short clauses with the previous clause."""
+        """Merge very short clauses with the previous clause (Helper)."""
         if not clauses:
             return []
-        
+
         result = [clauses[0]]
         for clause in clauses[1:]:
             if len(clause.text) < self.min_clause_length and result:
-               
+
                 prev = result[-1]
                 result[-1] = Clause_cl(
                     text=f"{prev.text}\n{clause.text}",
@@ -162,10 +161,10 @@ class ClauseSegmenter:
         return result
 
     def get_clause_statistics(self, clauses: List[Clause_cl]) -> Dict:
-        """Generate statistics about segmented clauses."""
+        """Generate statistics about segmented clauses (Unchanged)."""
         if not clauses:
             return {}
-        
+
         return {
             "total_clauses": len(clauses),
             "avg_length": sum(len(c.text) for c in clauses) / len(clauses),
@@ -178,15 +177,7 @@ class ClauseSegmenter:
             "has_headings": sum(1 for c in clauses if c.heading)
         }
 
-    def segment_text_simple(self, raw_text: str) -> List[str]:
-        """
-        Backward-compatible method that returns just the text strings.
-        
-        Args:
-            raw_text: The full text of the contract.
-            
-        Returns:
-            A list of clause text strings.
-        """
-        clauses = self.segment_text(raw_text)
+    async def segment_text_simple(self, raw_text: str) -> List[str]:
+        """Backward-compatible method that returns just the text strings (Updated to be async)."""
+        clauses = await self.segment_text(raw_text)
         return [clause.text for clause in clauses]

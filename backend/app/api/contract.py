@@ -1,6 +1,8 @@
+from ast import List
+from dataclasses import asdict
 from datetime import datetime
 import tempfile
-from typing import Optional
+from typing import Dict, Optional
 import uuid
 from pathlib import Path 
 from beanie import PydanticObjectId
@@ -11,6 +13,7 @@ from app.minio import DocumentBucket
 from app.models.documentUploaded import ContractDocument, ContractStatus
 from app.services.extractor import DocumentExtractor
 from app.repositories.contract import ContractRepository
+from app.services.segmenter import ClauseSegmenter
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -142,17 +145,43 @@ async def upload_contract(
 
 
 @router.post("/{contract_id}/extract-clauses")
-async def extract_clauses(contract_id: str):
-    fake_clauses = [
-        {"type": "Payment Terms", "text": "The payment shall be made within 30 days."},
-        {"type": "Termination", "text": "Either party may terminate with 30 days' notice."}
-    ]
+async def extract_clauses(
+    contract_id: str,
+):
+    """
+    Fetches the contract raw text, uses the ClauseSegmenter service (which calls
+    the LLM) to split the document, and persists the structured clauses to the database.
+    
+    This version instantiates the ClauseSegmenter directly inside the route.
+    """
+    segmenter = ClauseSegmenter()
+    contract = await ContractRepository.get_contract_by_id(contract_id)
 
-    await ContractDocument.find_one({"file_id": contract_id}).update(
-        {"$set": {"clauses": fake_clauses, "status": "clauses_extracted"}}
-    )
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
 
-    return {"status": "clauses_extracted", "clauses_count": len(fake_clauses)}
+    raw_text = contract.raw_text
+
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="Contract raw text is empty. Cannot segment.")
+
+    try:
+        segmented_clauses = await segmenter.segment_text(raw_text)
+        clauses_for_db: List[dict] = [asdict(c) for c in segmented_clauses]
+        await ContractDocument.find_one({"file_id": contract_id}).update(
+            {"$set": {"clauses": clauses_for_db, "status": "clauses_extracted"}}
+        )
+        statistics = segmenter.get_clause_statistics(segmented_clauses)
+
+        return {
+            "status": "clauses_extracted",
+            "clauses_count": len(clauses_for_db),
+            "statistics": statistics
+        }
+
+    except Exception as e:
+        print(f"Clause extraction failed for {contract_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Clause extraction failed due to an internal service error.")
 
 @router.post("/{contract_id}/compliance-check")
 async def compliance_check(contract_id: str):
