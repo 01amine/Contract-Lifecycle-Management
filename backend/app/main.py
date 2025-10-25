@@ -1,5 +1,5 @@
-from dto.policy import ClauseResponse
-from dto.risk import ClassifiedClause
+from app.dto.policy import ClauseResponse
+from app.dto.risk import ClassifiedClause
 from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
