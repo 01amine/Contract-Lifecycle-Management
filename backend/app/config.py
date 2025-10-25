@@ -4,6 +4,19 @@ from pathlib import Path
 from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from dotenv import load_dotenv
+    # Assuming the .env file is in the parent directory (Contract-Lifecycle-Management/backend/.env)
+    dotenv_path = Path(__file__).resolve().parent.parent / '.env'
+    if dotenv_path.exists():
+        print(f"Loading environment variables from: {dotenv_path}")
+        load_dotenv(dotenv_path)
+    else:
+        print(f"Warning: .env file not found at {dotenv_path}")
+except ImportError:
+    print("Warning: python-dotenv not installed. Environment variables must be set manually.")
+
 # from fastapi_mail import ConnectionConfig
 
 @dataclass
