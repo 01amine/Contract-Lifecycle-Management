@@ -125,6 +125,7 @@ async def upload_contract(
         return {"error": "Either a file or content must be provided."}
 
     document_extract: DocumentExtractor = request.app.state.document_extract
+    print(document_extract)
     doc_bucket = DocumentBucket(file_prefix="contracts")
 
     
@@ -141,16 +142,18 @@ async def upload_contract(
         file_id=file_id,
         content=content if content else extracted_data,
     )
+    print(contract_doc)
     await contract_doc.insert()
 
     return contract_doc.model_dump()
 
 
 @router.post("/{contract_id}/extract-clauses")
-async def extract_clauses_endpoint(contract_id: PydanticObjectId):    
+async def extract_clauses_endpoint(contract_id: PydanticObjectId):
     contract = await ContractRepository.get_contract_by_id(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
+
     raw_text = contract.content
     extraction_performed = False
     if not raw_text:
@@ -158,9 +161,11 @@ async def extract_clauses_endpoint(contract_id: PydanticObjectId):
             raise HTTPException(status_code=400, detail="No file name")
 
         doc_bucket = DocumentBucket(file_prefix="contracts")
+
     try:
         result = extract_clauses(raw_text)
         clauses_data = [clause.model_dump() for clause in result.clauses]
+
         await contract.update({
             "$set": {
                 "clauses": clauses_data,
@@ -171,21 +176,28 @@ async def extract_clauses_endpoint(contract_id: PydanticObjectId):
         return {
             "status": "success",
             "message": f"{'Extracted and ' if extraction_performed else ''}segmented into {result.total_clauses} clauses",
-            "total_clauses": result.total_clauses
+            "total_clauses": result.total_clauses,
+            "clauses": clauses_data
         }
 
     except Exception as e:
         await contract.update({"$set": {"status": ContractStatus.REJECTED}})
         raise HTTPException(status_code=500, detail=f"Clause extraction failed: {e}")
     
-
-
+    
 @router.post("/{contract_id}/compliance-check")
 async def compliance_check(contract_id: str):
-    fake_risks = [
-        {"clause": "Termination", "risk": "High", "reason": "No compensation clause for early termination"},
-        {"clause": "Payment Terms", "risk": "Low", "reason": "Within acceptable policy range"}
-    ]
+    contract = await ContractRepository.get_contract_by_id(contract_id)
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+
+    raw_text = contract.content
+    if not raw_text:
+        if not contract.file_name:
+            raise HTTPException(status_code=400, detail="No file name")
+
+        doc_bucket = DocumentBucket(file_prefix="contracts")
+    
 
     compliance_score = 0.85
     await ContractDocument.find_one({"file_id": contract_id}).update(

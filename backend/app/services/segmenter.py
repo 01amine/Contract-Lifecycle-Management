@@ -22,6 +22,8 @@ class ClauseExtractionResult(BaseModel):
 
 
 def extract_clauses(contract_text: str) -> ClauseExtractionResult:
+    print("---------------------------------")
+    print(contract_text)
     agent = Agent(
         name="ClauseExtractor",
         model=Gemini(
