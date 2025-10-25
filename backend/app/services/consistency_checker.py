@@ -6,6 +6,8 @@ from agno.models.google import Gemini
 from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.qdrant import Qdrant
 from app.config import settings
+from duckduckgo_search import DDGS 
+
 
 class ComplianceRisk(BaseModel):
     clause: str = Field(description="Clause heading or identifier")
@@ -33,6 +35,7 @@ def create_base_knowledge(collection_name: str = "company_policies"):
     )
     return knowledge_base
 
+
 def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
     knowledge_base = create_base_knowledge(collection_name)
     return Agent(
@@ -56,6 +59,7 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
         stream=False,
     )
 
+
 def create_tariff_agent(collection_name: str = "company_policies") -> Agent:
     knowledge_base = create_base_knowledge(collection_name)
     return Agent(
@@ -78,13 +82,53 @@ def create_tariff_agent(collection_name: str = "company_policies") -> Agent:
         search_knowledge=True,
         stream=False,
     )
+
+
+def create_risk_review_agent() -> Agent:
+    return Agent(
+        name="ExternalRiskReviewAgent",
+        model=Gemini(
+            id="gemini-2.5-flash",
+            api_key=settings.GOOGLE_API_KEY,
+        ),
+        instructions=[
+            "You are an independent risk auditor. Your job is to identify risks and missing provisions BEYOND company policies.",
+            "Focus on market standards, legal gaps, missing clauses (e.g., indemnification, data privacy), and commercially unfavorable terms.",
+            "Use the 'check_external_web_data' tool to verify external data, standard industry terms, or public compliance information if needed.",
+            "For the 'clause' field, use the clause heading or 'Missing Provision'.",
+            "For the 'risk' field, use exactly one of: 'Low', 'Medium', 'High', 'Critical'.",
+            "Only include clauses that have commercial, legal, or missing provision risks.",
+            "Calculate compliance score: 1.0 = fully compliant (no risks), 0.0 = completely non-compliant.",
+            "Your output MUST be a JSON object STRICTLY matching the format: {'risks': [{'clause': '...', 'risk': '...', 'reason': '...'}], 'compliance_score': 0.85}"
+        ],
+        
+        tools=[check_external_web_data], 
+        stream=False,
+    )
+
+def check_external_web_data(query: str) -> str:
+    """Uses DuckDuckGo search to provide external context to the agent."""
+    try:
+        results = DDGS().text(keywords=query, max_results=5)
+        
+        
+        formatted_results = "\n---\n".join([
+            f"Title: {r['title']}\nSnippet: {r['snippet']}\nURL: {r['href']}"
+            for r in results
+        ])
+        
+        return f"External search results for '{query}':\n{formatted_results}"
+    except Exception as e:
+        return f"External search failed: {str(e)}. No external data found for '{query}'."
+
+
 def _run_specialist_agent(agent: Agent, clauses: List[ClauseWithCompliance], contract_id: str) -> ComplianceCheckResult:
     clauses_text = "\n\n".join([
         f"Clause {c.clause_id} - {c.heading or 'Untitled'}:\n{c.text}"
         for c in clauses
     ])
     prompt = f"""
-Check these contract clauses for compliance with company policies.
+Check these contract clauses for compliance/risks.
 
 Contract ID: {contract_id}
 Total Clauses: {len(clauses)}
@@ -92,10 +136,10 @@ Total Clauses: {len(clauses)}
 Contract Clauses:
 {clauses_text}
 
-Return JSON strictly in the format defined by your output schema instructions.
+Return JSON strictly in the format defined by your instructions.
 """
     try:
-        response = agent.run(prompt)
+        response = agent.run(prompt, contract_id=contract_id) 
         raw_output = (response.content or "").strip()
 
         if not raw_output or "unable to check" in raw_output.lower():
@@ -112,36 +156,42 @@ Return JSON strictly in the format defined by your output schema instructions.
     except Exception:
         return ComplianceCheckResult(risks=[], compliance_score=1.0)
 
-# Tool wrapper for the Orchestrator
+
 def check_compliance_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> ComplianceCheckResult:
     risk_agent = create_compliance_agent()
     return _run_specialist_agent(risk_agent, clauses, contract_id)
 
-# Tool wrapper for the Orchestrator
+
 def check_tariff_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> ComplianceCheckResult:
     tariff_agent = create_tariff_agent()
     return _run_specialist_agent(tariff_agent, clauses, contract_id)
 
-# Main Orchestrator Function
+
+def check_external_context_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> ComplianceCheckResult:
+    risk_review_agent = create_risk_review_agent()
+    return _run_specialist_agent(risk_review_agent, clauses, contract_id)
+
+
 def check_compliance(clauses: List[ClauseWithCompliance], contract_id: str, collection_name: str = "company_policies") -> ComplianceCheckResult:
     orchestrator = Agent(
         name="ContractOrchestrator",
         model=Gemini(id="gemini-2.5-flash", api_key=settings.GOOGLE_API_KEY),
         instructions=[
             "You are a contract router and risk aggregator.",
-            "Analyze the contract clauses to determine the primary context (e.g., Finance, General Risk, Real Estate, Software).",
-            "If the context is financial, use 'check_tariff_risks'. For all other contexts (including general compliance, real estate, software, or unknown contexts), use 'check_compliance_risks'.",
+            "Analyze the contract clauses to determine the primary context (e.g., Finance, General Risk, External Context).",
+            "Use 'check_tariff_risks' for clauses clearly related to finance or tariffs.",
+            "Use 'check_external_context_risks' for complex or missing clauses that require external validation, industry standard checks, or external searching (e.g., market rate validation, compliance with non-policy law, or identifying missing clauses like data privacy or indemnification).",
+            "Use 'check_compliance_risks' for all other contexts, serving as the baseline check against internal policies (General Risk).",
             "You MUST call at least one tool. If multiple contexts apply, call all relevant tools once.",
-            # CRITICAL CHANGE: Explicitly instruct JSON output instead of using output_schema
             "The final output MUST be a single aggregated JSON object containing all risks from all called tools, and an overall compliance score.",
             "The JSON MUST STRICTLY match the format: {'risks': [{'clause': '...', 'risk': '...', 'reason': '...'}], 'compliance_score': 0.85}",
-            "Ensure the compliance score accurately reflects the combined risks.",
+            "Ensure the compliance score accurately reflects the combined risks from all three specialized checks.",
         ],
         tools=[
             check_tariff_risks,
             check_compliance_risks,
+            check_external_context_risks, 
         ],
-        # REMOVED: output_schema=ComplianceCheckResult to fix the 400 INVALID_ARGUMENT error
         stream=False,
     )
     clauses_text = "\n\n".join([f"Clause {c.clause_id} - {c.heading or 'Untitled'}:\n{c.text}" for c in clauses])
@@ -153,11 +203,9 @@ Contract Clauses:
 {clauses_text}
 """
     try:
-        # Note: The 'clauses' and 'contract_id' arguments here are passed to the Tool functions.
         response = orchestrator.run(prompt, clauses=clauses, contract_id=contract_id)
         raw_output = (response.content or "").strip()
 
-        # The rest of the JSON parsing logic remains correct and is crucial here:
         if raw_output.startswith("```"):
             raw_output = raw_output.split("\n", 1)[1]
             raw_output = raw_output.rsplit("```", 1)[0]
@@ -166,9 +214,7 @@ Contract Clauses:
         data = json.loads(raw_output)
         return ComplianceCheckResult(**data)
     except Exception:
-        # Fallback in case of any failure
         return ComplianceCheckResult(risks=[], compliance_score=1.0)
-
 
 def convert_clauses_for_compliance(clauses_data: List) -> List[ClauseWithCompliance]:
     return [
