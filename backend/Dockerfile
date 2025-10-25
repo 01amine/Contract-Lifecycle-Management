@@ -32,7 +32,10 @@ RUN uv sync
 RUN uv pip install --system \
     python-docx \
     google-generativeai \
-    qdrant-client
+    qdrant-client \
+    pdfminer-six\
+    pytesseract\
+    pypdfium2
 
 # Expose port
 EXPOSE 8000
