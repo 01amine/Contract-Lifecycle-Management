@@ -38,24 +38,19 @@ class DocumentExtractor:
         elif file_path.suffix.lower() == '.docx':
             return self._extract_docx(file_path)
         else:
-            # Handle other supported formats if needed, or raise an error
             return f"Error: Unsupported file format {file_path.suffix}."
 
     def _extract_docx(self, file_path: Path) -> str:
-        """Extracts text from a DOCX file."""
         print(f"Processing digital DOCX file: {file_path.name}")
         try:
             document = Document(file_path)
             full_text = []
             
-            # Extract text from all paragraphs
             for paragraph in document.paragraphs:
                 full_text.append(paragraph.text)
             
-            # Extract text from tables (simple extraction)
             for table in document.tables:
                 for row in table.rows:
-                    # Join cell text with a separator for readability
                     row_text = " | ".join(cell.text for cell in row.cells)
                     full_text.append(f"\n---TABLE ROW---\n{row_text}")
 
