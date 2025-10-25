@@ -1,11 +1,14 @@
 from datetime import datetime
+import tempfile
 from typing import Optional
 import uuid
-from fastapi import APIRouter, Body, File
+from pathlib import Path 
+from fastapi import APIRouter, Body, File, Request, UploadFile
 from fastapi.responses import HTMLResponse
 
 from app.minio import DocumentBucket
 from app.models.documentUploaded import ContractDocument
+from app.services.extractor import DocumentExtractor
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -106,10 +109,20 @@ async def get_signed_url():
     return HTMLResponse(content=html)
 
 
-@router.post("/upload-contract")
+@router.post("/upload-contract", description="Upload contract image, PDF, text, or handwriting")
 async def upload_contract(
-    file: Optional[bytes] = File(None),
-    contant: Optional[str] = Body(None)
+    request: Request,
+    file: Optional[UploadFile] = File(None),
+    content: Optional[str] = Body(None),
 ):
-    if file :
-        pass
+    document_extract: DocumentExtractor = request.app.state.document_extract
+
+    if file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file.filename) as tmp_file:
+            tmp_file.write(await file.read())
+            tmp_file_path = tmp_file.name
+
+        path_obj = Path(tmp_file_path)
+
+        extracted_data: str = document_extract.extract(path_obj)
+        return { "extracted_data": extracted_data}

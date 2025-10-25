@@ -58,7 +58,6 @@ class ExtractionConfig:
     supported_formats: tuple = ('.pdf', '.docx', '.doc')
     save_intermediate: bool = False
 
-
 class Config:
     """Main configuration class."""
     

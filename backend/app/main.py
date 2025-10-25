@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from qdrant_client import AsyncQdrantClient
-from app.config import LLMConfig, settings  
+from app.config import get_config, settings
 from pymongo import AsyncMongoClient
 from beanie import init_beanie
 from app.minio import init_minio_client
@@ -32,24 +32,8 @@ mongo_client:AsyncMongoClient = AsyncMongoClient(settings.MONGO_URI)
 mongo_db = mongo_client[settings.MONGO_DB]
 
 
-# def init_classes():
-#     DocumentExtractor()
-#     Clause_cl()
-#     ClauseSegmenter()
-#     RuleEngineService()
-#     LLMSuggestion()
-#     LLMVerdict()
-#     ClassifiedClause()
-#     ClauseResponse()
-#     LLMConfig()
-#     LLMWorker()
-    
-    
-    
-    
 
 async def init_mongo():
-    
     await init_beanie(database=mongo_db, document_models=[ notification,Template,ContractDocument])
 
 async def init_qdrant():
@@ -57,7 +41,10 @@ async def init_qdrant():
     return client
 
 async def init_ocr():
-    DocumentExtractor()
+    config = get_config()
+    document_extract =DocumentExtractor(config=config)
+    return document_extract
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -70,6 +57,8 @@ async def lifespan(app: FastAPI):
         minio_root_password=settings.MINIO_ROOT_PASSWORD
     )
     await TextDocumentProcessor.init(client)
+    document_extract =await init_ocr()
+    app.state.document_extract = document_extract
     yield
     
 
