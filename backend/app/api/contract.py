@@ -165,11 +165,7 @@ async def extract_clauses_endpoint(contract_id: PydanticObjectId):
             }
         })
 
-        return {
-            "status": "success",
-            "message": f"{'Extracted and ' if extraction_performed else ''}segmented into {result.total_clauses} clauses",
-            "total_clauses": result.total_clauses
-        }
+        return clauses_data
 
     except Exception as e:
         await contract.update({"$set": {"status": ContractStatus.REJECTED}})
