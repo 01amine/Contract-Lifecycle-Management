@@ -60,7 +60,13 @@ def check_compliance_pompt(
         """
     
     response = agent.run(prompt)
-    return response.content
+    
+    # 2. Return the parsed Pydantic object
+    if response.parsed:
+        return response.parsed
+    else:
+        # Handle case where parsing might fail (e.g., bad model output)
+        raise Exception(f"Failed to parse model output into ComplianceCheckResult: {response.content}")
 
 
 def convert_clauses_for_compliance(clauses_data: List[clause]) -> List[ClauseWithCompliance]:
