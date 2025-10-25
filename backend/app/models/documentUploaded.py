@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 from beanie import Document
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 
 class ContractStatus(str, Enum):
@@ -12,10 +12,13 @@ class ContractStatus(str, Enum):
     REJECTED = "rejected"
     SIGNED = "signed"
 
-
+class clause(BaseModel):
+    title :str
+    content:str
 class ContractDocument(Document):
     file_name: str                     
-    file_id: str                       
+    file_id: str 
+    clauses: Optional[list[clause]] = None                     
     content: Optional[str] = None      
     status: ContractStatus = ContractStatus.DRAFT 
     created_at: datetime = Field(default_factory=datetime.utcnow)
