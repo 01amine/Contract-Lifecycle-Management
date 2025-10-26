@@ -18,6 +18,8 @@ import { debounce } from "@/lib/utils";
 import { ClauseList } from "@/components/contracts/clause-list";
 import { OverviewContent } from "@/components/contracts/overview-content";
 import { CopilotAssistant } from "@/components/contracts/copilot-assistant";
+import { VersionHistory } from "@/components/contracts/version-history";
+import { generateVersionHistory } from "@/lib/demo-versioning";
 import type { Clause } from "@/actions/contracts";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
@@ -72,6 +74,7 @@ function RouteComponent() {
     tabs: [
       { id: "overview", label: "Overview" },
       { id: "clauses", label: "Clauses" },
+      { id: "versions", label: "Versions" },
       { id: "edit", label: "Edit" },
     ],
     defaultTab: "overview",
@@ -110,6 +113,12 @@ function RouteComponent() {
       });
       setContent(contract.content || "");
     }
+  }, [contract]);
+
+  // Generate version history based on contract data
+  const versionHistory = useMemo(() => {
+    if (!contract) return [];
+    return generateVersionHistory(contract._id, contract.created_at);
   }, [contract]);
 
   // Trigger debounced suggestions when content changes
@@ -219,6 +228,7 @@ function RouteComponent() {
         tabs={[
           { id: "overview", label: "Overview" },
           { id: "clauses", label: "Clauses" },
+          { id: "versions", label: "Versions" },
           { id: "edit", label: "Edit" },
         ]}
         activeTab={activeTab}
@@ -240,6 +250,11 @@ function RouteComponent() {
               onRegenerateClick={handleRegenerateClause}
             />
           </div>
+        </TabContent>
+
+        {/* Versions Tab */}
+        <TabContent value="versions" activeTab={activeTab}>
+          <VersionHistory versions={versionHistory} />
         </TabContent>
 
         {/* Edit Tab */}

@@ -17,6 +17,7 @@ import { getStatusColor, getStatusLabel } from "@/lib/contract-status";
 import { Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { getContractVersion } from "@/lib/demo-versioning";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,
@@ -190,7 +191,7 @@ function RouteComponent() {
                         )}
                       </td>
                       <td className="p-4 text-sm font-medium">
-                        v{contract.version}
+                        v{getContractVersion(contract._id, contract.created_at)}
                       </td>
                     </motion.tr>
                   ))}

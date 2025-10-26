@@ -1,13 +1,14 @@
 import {
-  FileText,
   Calendar,
   Tag,
   AlertCircle,
   Clock,
   ClipboardList,
 } from "lucide-react";
+import { getContractVersion } from "@/lib/demo-versioning";
 
 interface Contract {
+  _id?: string;
   file_name?: string;
   category?: string;
   created_at?: string;
@@ -93,7 +94,11 @@ export function OverviewContent({ contract }: OverviewContentProps) {
               <Clock className="size-4" />
               Version
             </label>
-            <p className="text-sm font-medium mt-1">v{contract.version || 1}</p>
+            <p className="text-sm font-medium mt-1">
+              v{contract._id && contract.created_at 
+                ? getContractVersion(contract._id, contract.created_at)
+                : contract.version || 1}
+            </p>
           </div>
         </div>
       </div>
