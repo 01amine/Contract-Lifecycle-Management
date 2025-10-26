@@ -30,7 +30,7 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
     return Agent(
         name="ContractDraftingExpert",
         model=Gemini(
-            id="gemini-2.5-flash",
+            id="gemini-2.5-flash-lite",
             api_key=settings.GOOGLE_API_KEY,
         ),
         instructions=[
