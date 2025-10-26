@@ -234,7 +234,7 @@ function RouteComponent() {
         onTabChange={setActiveTab}
       >
         <TabContent value="overview" activeTab={activeTab}>
-          <OverviewContent contract={contract} />
+          <OverviewContent contract={contract} setActiveTab={setActiveTab} />
         </TabContent>
 
         {/* Clauses Tab */}

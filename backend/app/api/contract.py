@@ -209,7 +209,12 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
         )
     
     try:
+        print("x\n"*10)
+        print(f"Checking compliance for contract {contract_id}, clauses: {len(contract.clauses)}")
+
         clauses = convert_clauses_for_compliance(contract.clauses)
+
+        print(f"Converted clauses: {len(clauses)}")
         
         result = check_compliance(
             clauses=clauses,

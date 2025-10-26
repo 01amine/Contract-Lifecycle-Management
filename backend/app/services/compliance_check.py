@@ -147,19 +147,20 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
             "Review each clause against retrieved company policies from the knowledge base.",
             "For each issue found, create a detailed finding with:",
             "- finding_id: unique ID like 'COMP-001'",
-            "- finding_type: policy_violation, missing_clause, weak_provision, etc.",
-            "- domain: policy_compliance, legal, financial, etc.",
-            "- severity: critical, high, medium, low, info",
-            "- impact: severe, significant, moderate, minimal",
-            "- confidence_score: 0.0-1.0",
+            "- finding_type: one of: policy_violation, missing_clause, weak_provision, legal_risk, financial_risk, red_flag",
+            "- domain: MUST be one of: policy_compliance, financial, legal, data_privacy, payment_terms, dispute_resolution, indemnification, confidentiality",
+            "- severity: one of: critical, high, medium, low, info",
+            "- impact: one of: severe, significant, moderate, minimal",
+            "- confidence_score: number between 0.0-1.0",
             "- title: short descriptive title",
             "- description: detailed explanation",
-            "- affected_clauses: list with clause_id, heading, excerpt",
-            "- policy_violations: list of violated policies with policy_name, requirement",
-            "- remediation_actions: list of actions with action_type, description, priority",
+            "- affected_clauses: list of objects with clause_id (STRING not number), heading (optional), excerpt (optional, max 200 chars)",
+            "- policy_violations: list of violated policies with policy_name, requirement, section (optional)",
+            "- remediation_actions: list of actions with action_type, description, priority (INTEGER 1-5, NOT string)",
             "- business_consequence: what could happen if not fixed",
             "- source: 'compliance_agent'",
             "",
+            "CRITICAL: clause_id MUST be a STRING (e.g., '1', '2.1'), priority MUST be an INTEGER 1-5",
             "Calculate compliance score: 1.0 = fully compliant, 0.0 = completely non-compliant.",
             "Search the knowledge base for relevant company policies before assessing each clause.",
             "Your output MUST be a JSON object: {'findings': [...], 'compliance_score': 0.85}"
@@ -184,19 +185,20 @@ def create_tariff_agent(collection_name: str = "company_policies") -> Agent:
             "Review each clause for financial risks, missing tariff classifications, and cost-protection issues.",
             "For each issue found, create a detailed finding with:",
             "- finding_id: unique ID like 'TAR-001'",
-            "- finding_type: financial_risk, missing_clause, weak_provision, etc.",
-            "- domain: financial, payment_terms, regulatory",
-            "- severity: critical, high, medium, low, info",
-            "- impact: severe, significant, moderate, minimal",
-            "- confidence_score: 0.0-1.0",
+            "- finding_type: one of: policy_violation, missing_clause, weak_provision, legal_risk, financial_risk, red_flag",
+            "- domain: MUST be one of: policy_compliance, financial, legal, data_privacy, payment_terms, dispute_resolution, indemnification, confidentiality",
+            "- severity: one of: critical, high, medium, low, info",
+            "- impact: one of: severe, significant, moderate, minimal",
+            "- confidence_score: number between 0.0-1.0",
             "- title: short descriptive title",
             "- description: detailed explanation",
-            "- affected_clauses: list with clause_id, heading, excerpt",
-            "- policy_violations: list of violated policies with policy_name, requirement",
-            "- remediation_actions: list of actions with action_type, description, priority",
+            "- affected_clauses: list of objects with clause_id (STRING not number), heading (optional), excerpt (optional, max 200 chars)",
+            "- policy_violations: list of violated policies with policy_name, requirement, section (optional)",
+            "- remediation_actions: list of actions with action_type, description, priority (INTEGER 1-5, NOT string)",
             "- business_consequence: financial impact if not fixed",
             "- source: 'tariff_agent'",
             "",
+            "CRITICAL: clause_id MUST be a STRING (e.g., '1', '2.1'), priority MUST be an INTEGER 1-5",
             "Calculate compliance score: 1.0 = fully compliant, 0.0 = completely non-compliant.",
             "Search the knowledge base for relevant financial policies before assessing.",
             "Your output MUST be a JSON object: {'findings': [...], 'compliance_score': 0.85}"
@@ -221,20 +223,20 @@ def create_risk_review_agent() -> Agent:
             "Use the 'check_external_web_data' tool to verify external data and industry standards.",
             "For each issue found, create a detailed finding with:",
             "- finding_id: unique ID like 'EXT-001'",
-            "- finding_type: legal_risk, missing_clause, red_flag, recommendation",
-            "- domain: legal, data_privacy, intellectual_property, etc.",
-            "- severity: critical, high, medium, low, info",
-            "- impact: severe, significant, moderate, minimal",
-            "- confidence_score: 0.0-1.0",
+            "- finding_type: one of: policy_violation, missing_clause, weak_provision, legal_risk, financial_risk, red_flag",
+            "- domain: MUST be one of: policy_compliance, financial, legal, data_privacy, payment_terms, dispute_resolution, indemnification, confidentiality",
+            "- severity: one of: critical, high, medium, low, info",
+            "- impact: one of: severe, significant, moderate, minimal",
+            "- confidence_score: number between 0.0-1.0",
             "- title: short descriptive title",
             "- description: detailed explanation",
-            "- affected_clauses: list with clause_id, heading, excerpt (or 'Missing Provision')",
-            "- industry_standard: reference to market standard if applicable",
-            "- remediation_actions: list of actions with action_type, description, priority",
+            "- affected_clauses: list of objects with clause_id (STRING not number), heading (optional), excerpt (optional, max 200 chars)",
+            "- policy_violations: list (can be empty for external findings)",
+            "- remediation_actions: list of actions with action_type, description, priority (INTEGER 1-5, NOT string)",
             "- business_consequence: what could happen if not fixed",
             "- source: 'external_review_agent'",
-            "- external_references: list of web sources used",
             "",
+            "CRITICAL: clause_id MUST be a STRING (e.g., '1', '2.1' or 'Missing Provision'), priority MUST be an INTEGER 1-5",
             "Calculate compliance score: 1.0 = fully compliant, 0.0 = completely non-compliant.",
             "Your output MUST be a JSON object: {'findings': [...], 'compliance_score': 0.85}"
         ],
@@ -256,6 +258,46 @@ def check_external_web_data(query: str) -> str:
         return f"External search results for '{query}':\n{formatted_results}"
     except Exception as e:
         return f"External search failed: {str(e)}. No external data found for '{query}'."
+
+
+def _sanitize_finding_data(finding_data: Dict) -> Dict:
+    """Sanitize finding data to match schema requirements"""
+    sanitized = finding_data.copy()
+    
+    # Map invalid domains to valid ones
+    domain_mapping = {
+        'tariff_classification': 'financial',
+        'regulatory': 'legal',
+        'intellectual_property': 'legal',
+        'commercial': 'financial',
+    }
+    
+    if 'domain' in sanitized and sanitized['domain'] in domain_mapping:
+        sanitized['domain'] = domain_mapping[sanitized['domain']]
+    
+    # Ensure affected_clauses have string clause_id
+    if 'affected_clauses' in sanitized:
+        for clause in sanitized['affected_clauses']:
+            if 'clause_id' in clause and not isinstance(clause['clause_id'], str):
+                clause['clause_id'] = str(clause['clause_id'])
+    
+    # Convert priority strings to integers
+    if 'remediation_actions' in sanitized:
+        priority_mapping = {
+            'critical': 5,
+            'high': 4,
+            'medium': 3,
+            'low': 2,
+            'minimal': 1,
+        }
+        for action in sanitized['remediation_actions']:
+            if 'priority' in action:
+                if isinstance(action['priority'], str):
+                    action['priority'] = priority_mapping.get(action['priority'].lower(), 3)
+                elif not isinstance(action['priority'], int):
+                    action['priority'] = 3
+    
+    return sanitized
 
 
 def _run_specialist_agent(agent: Agent, clauses: List[ClauseWithCompliance], contract_id: str, source: AnalysisSource) -> Dict:
@@ -296,16 +338,19 @@ Return JSON strictly in the format defined by your instructions.
 
 
 def check_compliance_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> Dict:
+    print(f"Checking compliance risks for contract {contract_id}, clauses: {len(clauses)}")
     risk_agent = create_compliance_agent()
     return _run_specialist_agent(risk_agent, clauses, contract_id, AnalysisSource.COMPLIANCE_AGENT)
 
 
 def check_tariff_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> Dict:
+    print(f"Checking tariff risks for contract {contract_id}, clauses: {len(clauses)}")
     tariff_agent = create_tariff_agent()
     return _run_specialist_agent(tariff_agent, clauses, contract_id, AnalysisSource.TARIFF_AGENT)
 
 
 def check_external_context_risks(clauses: List[ClauseWithCompliance], contract_id: str) -> Dict:
+    print(f"Checking external context risks for contract {contract_id}, clauses: {len(clauses)}")
     risk_review_agent = create_risk_review_agent()
     return _run_specialist_agent(risk_review_agent, clauses, contract_id, AnalysisSource.EXTERNAL_REVIEW_AGENT)
 
@@ -346,11 +391,13 @@ def check_compliance(clauses: List[ClauseWithCompliance], contract_id: str, coll
     findings_objects = []
     for finding_data in all_findings:
         try:
-            # Ensure all required fields have defaults
-            finding = ComplianceFinding(**finding_data)
+            # Sanitize data types before creating ComplianceFinding
+            sanitized = _sanitize_finding_data(finding_data)
+            finding = ComplianceFinding(**sanitized)
             findings_objects.append(finding)
         except Exception as e:
             print(f"Error parsing finding: {e}")
+            print(f"Finding data: {json.dumps(finding_data, indent=2, default=str)}")
     
     # Calculate metrics
     critical_count = sum(1 for f in findings_objects if f.severity == Severity.CRITICAL)
@@ -412,13 +459,23 @@ def check_compliance(clauses: List[ClauseWithCompliance], contract_id: str, coll
     )
 
 def convert_clauses_for_compliance(clauses_data: List) -> List[ClauseWithCompliance]:
-    return [
-        ClauseWithCompliance(
-            clause_id=c.clause_id,
-            text=c.text,
-            heading=c.heading,
-            level=c.level
-        )
-        for c in clauses_data
-    ]
+    """Convert clause dictionaries or objects to ClauseWithCompliance objects"""
+    result = []
+    for c in clauses_data:
+        # Handle both dict and object formats
+        if isinstance(c, dict):
+            result.append(ClauseWithCompliance(
+                clause_id=c.get("clause_id", ""),
+                text=c.get("text", ""),
+                heading=c.get("heading"),
+                level=c.get("level", 0)
+            ))
+        else:
+            result.append(ClauseWithCompliance(
+                clause_id=c.clause_id,
+                text=c.text,
+                heading=c.heading,
+                level=c.level
+            ))
+    return result
 
