@@ -2,8 +2,8 @@ import json
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-from agno.knowledge.knowledge import Knowledge 
+from agno.models.google import Gemini
+from agno.knowledge.knowledge import Knowledge
 from agno.vectordb.qdrant import Qdrant
 from app.config import settings
 from duckduckgo_search import DDGS 
@@ -40,10 +40,9 @@ def create_compliance_agent(collection_name: str = "company_policies") -> Agent:
     knowledge_base = create_base_knowledge(collection_name)
     return Agent(
         name="ComplianceChecker",
-        model=OpenAIChat(
-            id=settings.GROQ_MODEL,
-            api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
+        model=Gemini(
+            id="gemini-2.5-flash",
+            api_key=settings.GOOGLE_API_KEY,
         ),
         instructions=[
             "You are a contract compliance expert checking against company policies (The General Risk Handler).",
@@ -65,10 +64,9 @@ def create_tariff_agent(collection_name: str = "company_policies") -> Agent:
     knowledge_base = create_base_knowledge(collection_name)
     return Agent(
         name="TariffManagementAgent",
-        model=OpenAIChat(
-            id=settings.GROQ_MODEL,
-            api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
+        model=Gemini(
+            id="gemini-2.5-flash",
+            api_key=settings.GOOGLE_API_KEY,
         ),
         instructions=[
             "You are a Tariff and Financial Risk expert checking against company policies.",
@@ -89,10 +87,9 @@ def create_tariff_agent(collection_name: str = "company_policies") -> Agent:
 def create_risk_review_agent() -> Agent:
     return Agent(
         name="ExternalRiskReviewAgent",
-        model=OpenAIChat(
-            id=settings.GROQ_MODEL,
-            api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
+        model=Gemini(
+            id="gemini-2.5-flash",
+            api_key=settings.GOOGLE_API_KEY,
         ),
         instructions=[
             "You are an independent risk auditor. Your job is to identify risks and missing provisions BEYOND company policies.",
@@ -113,6 +110,7 @@ def check_external_web_data(query: str) -> str:
     """Uses DuckDuckGo search to provide external context to the agent."""
     try:
         results = DDGS().text(keywords=query, max_results=5)
+        
         
         formatted_results = "\n---\n".join([
             f"Title: {r['title']}\nSnippet: {r['snippet']}\nURL: {r['href']}"
@@ -177,11 +175,7 @@ def check_external_context_risks(clauses: List[ClauseWithCompliance], contract_i
 def check_compliance(clauses: List[ClauseWithCompliance], contract_id: str, collection_name: str = "company_policies") -> ComplianceCheckResult:
     orchestrator = Agent(
         name="ContractOrchestrator",
-        model=OpenAIChat(
-            id=settings.GROQ_MODEL,
-            api_key=settings.GROQ_API_KEY,
-            base_url=settings.GROQ_BASE_URL,
-        ),
+        model=Gemini(id="gemini-2.5-flash", api_key=settings.GOOGLE_API_KEY),
         instructions=[
             "You are a contract router and risk aggregator.",
             "Analyze the contract clauses to determine the primary context (e.g., Finance, General Risk, External Context).",

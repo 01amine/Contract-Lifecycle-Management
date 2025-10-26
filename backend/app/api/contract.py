@@ -116,6 +116,8 @@ async def get_signed_url():
 @router.post("/upload-contract", description="Upload contract image, PDF, text, or handwriting", response_model=ContractDocument)
 async def upload_contract(
     request: Request,
+    file: Optional[UploadFile] = File(None),
+    content: Optional[str] = Body(None),
 ):
     """
     Upload a contract either as a file or as text content.
