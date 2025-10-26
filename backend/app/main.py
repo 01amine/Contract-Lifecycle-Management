@@ -19,6 +19,7 @@ from app.api.policy import router as policy_router
 from app.models.policy import Template
 from app.services.embedding import TextDocumentProcessor
 from app.api.contract import router as contract_router
+from app.api.suggestions import router as suggestions_router
 from app.models.documentUploaded import ContractDocument
 from app.services.extractor import DocumentExtractor
 from app.services.rule_engine import RuleEngineService
@@ -134,4 +135,5 @@ app.include_router(contract_router)
 # app.include_router(categorie_router)
 app.include_router(analytics_router)
 app.include_router(policy_router)
+app.include_router(suggestions_router)
 

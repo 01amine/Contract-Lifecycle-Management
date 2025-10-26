@@ -199,13 +199,11 @@ async def extract_clauses_endpoint(contract_id: PydanticObjectId):
     
 @router.post("/{contract_id}/compliance-check")
 async def compliance_check_endpoint(contract_id: PydanticObjectId):
-   
-    
     contract = await ContractRepository.get_contract_by_id(contract_id)
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
     
-    if not contract or len(contract.clauses) == 0:
+    if not contract.clauses or len(contract.clauses) == 0:
         raise HTTPException(
             status_code=400,
             detail="No clauses found. Run extraction first."
@@ -239,8 +237,9 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
         })
         
         return {
-            "risks": risks,
-            "compliance_score": compliance_score
+            "status": "completed",
+            "compliance_score": compliance_score,
+            "issues": risks
         }
         
     except Exception as e:

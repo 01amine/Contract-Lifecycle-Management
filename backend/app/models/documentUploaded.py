@@ -16,8 +16,17 @@ class ContractStatus(str, Enum):
 class clause(BaseModel):
     clause_id: str
     text: str
+    content: Optional[str] = None
     heading: Optional[str] = None
     level: int
+    type: Optional[str] = None
+    confidence: Optional[float] = None
+
+
+class Risk(BaseModel):
+    clause: str
+    risk: str
+    reason: str
 
 
 class ContractDocument(Document):
@@ -31,6 +40,8 @@ class ContractDocument(Document):
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     version: int = 1
     last_updated: datetime = Field(default_factory=datetime.utcnow)
+    risks: Optional[list[Risk]] = None
+    compliance_score: Optional[float] = None
     
     class Settings:
         name = "contracts"

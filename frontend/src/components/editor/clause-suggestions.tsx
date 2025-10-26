@@ -50,9 +50,6 @@ export function ClauseSuggestions({
               <h4 className="font-semibold text-sm">{suggestion.title}</h4>
 
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-muted-foreground capitalize bg-muted rounded-xs px-1.5 py-0.5">
-                  {suggestion.type}
-                </span>
                 {suggestion.tags.map((tag, index) => (
                   <span
                     key={index}
@@ -74,7 +71,17 @@ export function ClauseSuggestions({
                 className="w-full"
               >
                 <PlusIcon className="size-3 mr-1" />
-                Insert Clause
+                {suggestion.type === "add"
+                  ? "Add Clause"
+                  : suggestion.type === "modify"
+                  ? "Modify Clause"
+                  : suggestion.type === "clarify"
+                  ? "Clarify Clause"
+                  : suggestion.type === "strengthen"
+                  ? "Strengthen Clause"
+                  : suggestion.type === "remove"
+                  ? "Remove Clause"
+                  : "Apply Suggestion"}
               </Button>
             </div>
           ))}

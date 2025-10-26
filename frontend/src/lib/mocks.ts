@@ -12,16 +12,11 @@ export type ContractTemplate = {
   category: string;
 };
 
-export const mockClauseSuggestions: ClauseSuggestion[] = [
-  // Force Majeure & Risk Management
-  {
-    id: "1",
-    title: "Force Majeure",
-    type: "Risk Management",
-    content:
-      "Neither party shall be liable for any failure or delay in performance under this Agreement to the extent such failure or delay results from circumstances beyond its reasonable control, including but not limited to acts of God, war, terrorism, natural disasters, government actions, or pandemics.",
-    tags: ["force majeure", "risk", "liability", "exemption"],
-  },
+// Mock clause suggestions have been removed - now using AI-powered suggestions from the API
+// This is kept for backward compatibility but should not be used
+export const mockClauseSuggestions: ClauseSuggestion[] = [];
+
+/* Previous mock data removed - now using AI-powered suggestions
   {
     id: "2",
     title: "Business Interruption Clause",
@@ -343,6 +338,7 @@ export const mockClauseSuggestions: ClauseSuggestion[] = [
     tags: ["costs", "expenses", "fees"],
   },
 ];
+*/
 
 export const mockTemplates: ContractTemplate[] = [
   {

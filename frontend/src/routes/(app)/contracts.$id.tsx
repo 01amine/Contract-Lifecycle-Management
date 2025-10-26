@@ -13,27 +13,72 @@ import { TemplateDialog } from "@/components/editor/template-dialog";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 import type { ClauseSuggestion } from "@/lib/mocks";
-import { getTemplateContent, mockClauseSuggestions } from "@/lib/mocks";
+import { getTemplateContent } from "@/lib/mocks";
 import { debounce } from "@/lib/utils";
 import { ClauseList } from "@/components/contracts/clause-list";
 import { OverviewContent } from "@/components/contracts/overview-content";
+import {
+  suggestionsActions,
+  type ClauseSuggestion as APIClauseSuggestion,
+} from "@/actions/suggestions";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
 });
 
-// Mock function to fetch suggestions - replace with actual API call later
+// Convert API suggestion format to UI format
+const convertSuggestionToUI = (
+  apiSuggestion: APIClauseSuggestion,
+  index: number
+): ClauseSuggestion => {
+  return {
+    id: `suggestion-${index}`,
+    title: apiSuggestion.title,
+    type: apiSuggestion.action || "add",
+    content: apiSuggestion.body,
+    tags: apiSuggestion.tags.map((tag) => tag.name),
+  };
+};
+
+// Fetch AI-powered suggestions from the API
 const fetchSuggestions = async (
   content: string,
   query?: string
 ): Promise<ClauseSuggestion[]> => {
   console.log(`Analyzing ${content.length} characters for suggestions...`);
-  console.log(`Query: ${query}`);
+  if (query) {
+    console.log(`Query: ${query}`);
+  }
 
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    // Truncate content to avoid sending huge payloads
+    // Keep first 1200 chars (enough for context) + last 800 chars (often has important clauses)
+    const MAX_CONTENT_LENGTH = 2000;
+    let optimizedContent = content;
 
-  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 4);
+    if (content.length > MAX_CONTENT_LENGTH) {
+      const firstPart = content.substring(0, 1200);
+      const lastPart = content.substring(content.length - 800);
+      optimizedContent = `${firstPart}\n\n... [content truncated for brevity] ...\n\n${lastPart}`;
+      console.log(
+        `Content truncated from ${content.length} to ${optimizedContent.length} characters`
+      );
+    }
+
+    const result = await suggestionsActions.generateSuggestions(
+      optimizedContent,
+      query
+    );
+
+    // Convert API format to UI format
+    return result.suggestions.map((suggestion, index) =>
+      convertSuggestionToUI(suggestion, index)
+    );
+  } catch (error) {
+    console.error("Failed to fetch AI suggestions:", error);
+    // Fallback to empty array on error
+    return [];
+  }
 };
 
 interface DraftMetadata {
@@ -88,10 +133,9 @@ function RouteComponent() {
     () =>
       debounce((content: string, mutate: typeof suggestionsMutation.mutate) => {
         if (content.trim()) {
-          console.log("Fetching suggestions for content...");
           mutate({ content });
         }
-      }, 5000),
+      }, 15000),
     [] // Empty dependency array - function is created only once
   );
 
