@@ -6,7 +6,7 @@ export interface ApiError {
   error: {
     message: string;
     code: number;
-    extra_details?: any;
+    extra_details?: Record<string, unknown>;
   };
 }
 
@@ -41,7 +41,7 @@ export const api = {
     return this.request<T>(endpoint, { ...options, method: "GET" });
   },
 
-  post<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  post<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "POST",
@@ -49,7 +49,7 @@ export const api = {
     });
   },
 
-  put<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+  put<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: "PUT",

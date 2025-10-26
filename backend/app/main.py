@@ -72,10 +72,19 @@ app.mount("/agno", agent_os.get_app())
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"],  
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "X-Requested-With",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Methods",
+    ],
+    expose_headers=["Content-Type", "Content-Length", "X-Total-Count"],
 )
 # app.add_middleware(HTTPSRedirectMiddleware)
 

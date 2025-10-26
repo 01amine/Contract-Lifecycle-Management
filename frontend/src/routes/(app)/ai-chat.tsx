@@ -1,13 +1,11 @@
 import { useHeader } from "@/stores/header";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import {
-  MessageList,
-  SuggestedQuestions,
-  ChatInput,
-  AI_RESPONSES,
-  type Message,
-} from "@/components/ai-chat";
+import { MessageList } from "@/components/ai-chat/message-list";
+import { SuggestedQuestions } from "@/components/ai-chat/suggested-questions";
+import { ChatInput } from "@/components/ai-chat/chat-input";
+import { AI_RESPONSES } from "@/components/ai-chat/constants";
+import type { Message } from "@/components/ai-chat/types";
 
 export const Route = createFileRoute("/(app)/ai-chat")({
   component: RouteComponent,

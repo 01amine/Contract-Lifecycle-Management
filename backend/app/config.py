@@ -27,9 +27,8 @@ class OCRConfig:
 @dataclass
 class LLMConfig:
     """Configuration for LLM services."""
-    # Updated Gemini model to Gemini 1.5 Pro
     gemini_api_key: Optional[str] = None
-    gemini_model: str = "gemini-1.5-pro"
+    gemini_model: str = "gemini-2.5-flash"
     
     
     openai_api_key: Optional[str] = None

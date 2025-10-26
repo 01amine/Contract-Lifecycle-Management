@@ -28,7 +28,15 @@ export default function ClauseDisplay({ clauses }: ClauseDisplayProps) {
           ease: "linear",
         }}
       >
-        {clauses.map((clause) => (
+        {[
+          ...clauses,
+          ...clauses,
+          ...clauses,
+          ...clauses,
+          ...clauses,
+          ...clauses,
+          ...clauses,
+        ].map((clause) => (
           <div
             key={clause.clause_id}
             className="text-left line-clamp-3 text-balance"

@@ -1,12 +1,26 @@
 import { motion } from "motion/react";
 import { CheckCircle2Icon, ClipboardList, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Clause, Risk } from "@/actions/contracts";
+
+interface ContractData {
+  _id: string;
+  file_name: string;
+  [key: string]: unknown;
+}
+
+interface ComplianceData {
+  compliance_score: number;
+  status: string;
+  issues?: Risk[];
+  [key: string]: unknown;
+}
 
 interface UploadCompleteProps {
   contractId: string | null;
-  contractData: any;
-  clausesData: any;
-  complianceData: any;
+  contractData: ContractData | null;
+  clausesData: Clause[] | null;
+  complianceData: ComplianceData | null;
   onViewContract?: () => void;
   onUploadAnother?: () => void;
   onGoToContracts?: () => void;

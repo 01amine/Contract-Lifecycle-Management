@@ -25,7 +25,6 @@ class ClassifiedClause:
     clause_type: ClauseType
     risk_score: float 
     risk_summary: str
-    start_pos: int
     level: int
     matched_keywords: List[str]
     confidence_score: float

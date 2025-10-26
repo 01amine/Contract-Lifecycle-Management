@@ -15,6 +15,8 @@ import { AnimatePresence, motion } from "motion/react";
 import type { ClauseSuggestion } from "@/lib/mocks";
 import { getTemplateContent, mockClauseSuggestions } from "@/lib/mocks";
 import { debounce } from "@/lib/utils";
+import { ClauseList } from "@/components/contracts/clause-list";
+import { OverviewContent } from "@/components/contracts/overview-content";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
@@ -196,13 +198,20 @@ function RouteComponent() {
         onTabChange={setActiveTab}
       >
         <TabContent value="overview" activeTab={activeTab}>
-          <div className="p-6 border rounded-xl shadow-island bg-card min-h-[calc(95vh-8rem)]">
-            <h3 className="text-lg font-semibold">Contract Overview</h3>
-            <p className="text-sm text-muted-foreground">
-              This is a summary of the contract.
-            </p>
+          <OverviewContent contract={contract} />
+        </TabContent>
+
+        {/* Clauses Tab */}
+        <TabContent value="clauses" activeTab={activeTab}>
+          <div className="p-6 border rounded-xl shadow-island bg-card">
+            <h3 className="text-lg font-semibold mb-4">
+              <ListIcon className="size-5 text-primary inline me-2 mb-1" />{" "}
+              Extracted Clauses
+            </h3>
+            <ClauseList clauses={contract.clauses || []} />
           </div>
         </TabContent>
+
         {/* Edit Tab */}
         <TabContent value="edit" activeTab={activeTab}>
           <motion.div
@@ -275,59 +284,6 @@ function RouteComponent() {
               )}
             </AnimatePresence>
           </motion.div>
-        </TabContent>
-
-        {/* Clauses Tab */}
-        <TabContent value="clauses" activeTab={activeTab}>
-          <div className="space-y-4">
-            <div className="p-6 border rounded-xl shadow-island bg-card">
-              <div className="flex items-center gap-2 mb-4">
-                <ListIcon className="size-5 text-primary" />
-                <h3 className="text-lg font-semibold">Extracted Clauses</h3>
-              </div>
-              {contract.clauses && contract.clauses.length > 0 ? (
-                <div className="space-y-4">
-                  {contract.clauses.map((clause: any, index: number) => (
-                    <div
-                      key={index}
-                      className="p-4 bg-muted/50 rounded-lg border border-border/50"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-muted-foreground">
-                            #{index + 1}
-                          </span>
-                          {clause.type && (
-                            <span className="text-xs font-medium px-2 py-1 rounded bg-primary/10 text-primary">
-                              {clause.type}
-                            </span>
-                          )}
-                        </div>
-                        {clause.confidence && (
-                          <span className="text-xs text-muted-foreground">
-                            Confidence: {(clause.confidence * 100).toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap">
-                        {clause.content ||
-                          clause.text ||
-                          JSON.stringify(clause)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <ListIcon className="size-12 mx-auto mb-4 opacity-50" />
-                  <p>No clauses extracted yet</p>
-                  <p className="text-xs mt-2">
-                    Clauses will appear here after processing
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
         </TabContent>
       </Tabs>
 

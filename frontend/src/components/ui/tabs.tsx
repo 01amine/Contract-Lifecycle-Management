@@ -21,16 +21,22 @@ export function useTabs({
   defaultTab,
 }: UseTabsOptions) {
   const navigate = useNavigate();
-  const search = (useSearch as any)({ strict: false, select: (s: any) => s });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const search = (useSearch as any)({
+    strict: false,
+    select: (s: Record<string, unknown>) => s,
+  });
   const activeTab =
     (search?.[searchParam] as string) || defaultTab || tabs[0]?.id;
 
   const setActiveTab = (
     tabId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     additionalSearch?: Record<string, any>
   ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (navigate as any)({
-      search: (prev: any) => ({
+      search: (prev: Record<string, unknown>) => ({
         ...prev,
         [searchParam]: tabId,
         ...(additionalSearch || {}),
@@ -61,9 +67,9 @@ export function Tabs({ tabs, activeTab, onTabChange, children }: TabsProps) {
               <button
                 key={index}
                 className={cn(
-                  "px-6 py-2 text-muted-foreground hover:bg-linear-to-t to-transparent from-50% from-card/50 border-b-2 border-transparent transition-all hover:text-foreground/60 duration-300",
+                  "px-6 py-2 text-muted-foreground hover:bg-linear-to-t to-transparent from-50% from-card/50 border-b-2 border-transparent transition-all hover:text-foreground/60 duration-300 font-medium",
                   activeTab === tab.id &&
-                    "text-foreground hover:text-foreground border-primary font-medium"
+                    "text-foreground hover:text-foreground border-primary"
                 )}
                 onClick={() => onTabChange(tab.id)}
               >

@@ -8,6 +8,22 @@ export enum ContractStatus {
   SIGNED = "signed",
 }
 
+export interface Clause {
+  clause_id?: string;
+  text?: string;
+  content?: string;
+  heading?: string;
+  level?: number;
+  type?: string;
+  confidence?: number;
+}
+
+export interface Risk {
+  clause: string;
+  risk: "Low" | "Medium" | "High" | "Critical";
+  reason: string;
+}
+
 export interface ContractDocument {
   _id: string;
   file_name: string;
@@ -19,8 +35,8 @@ export interface ContractDocument {
   uploaded_at: string;
   version: number;
   last_updated: string;
-  clauses?: any[];
-  risks?: any[];
+  clauses?: Clause[];
+  risks?: Risk[];
   compliance_score?: number;
 }
 
@@ -163,7 +179,7 @@ export const contractActions = {
   async extractClauses(id: string): Promise<{
     status: string;
     clauses_count: number;
-    statistics: any;
+    statistics: Record<string, unknown>;
   }> {
     return api.post(`/contract/${id}/extract-clauses`);
   },
@@ -172,7 +188,7 @@ export const contractActions = {
   async complianceCheck(id: string): Promise<{
     status: string;
     compliance_score: number;
-    issues: any[];
+    issues: Risk[];
   }> {
     return api.post(`/contract/${id}/compliance-check`);
   },

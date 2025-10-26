@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { NotFound } from "./not-found";
+import { RouteError } from "./error";
 import { Toaster } from "@/components/ui/sonner";
 
 import type { QueryClient } from "@tanstack/react-query";
@@ -34,4 +35,5 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     </ThemeProvider>
   ),
   notFoundComponent: NotFound,
+  errorComponent: RouteError,
 });

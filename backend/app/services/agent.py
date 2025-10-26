@@ -8,7 +8,7 @@ def groq_connector(messages: List[Dict[str, Any]], model_kwargs: Dict[str, Any],
     Connects the agno Agent framework to the Groq API.
 
     This function uses settings.GROQ_API_KEY and forces the model to
-    'openai/gpt-oss-120b' for consistent worker behavior.
+    'openai/gpt-oss-20b' for consistent worker behavior.
 
     Args:
         messages: The conversation history passed by the Agent framework.

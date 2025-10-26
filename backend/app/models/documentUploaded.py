@@ -18,7 +18,6 @@ class clause(BaseModel):
     text: str
     heading: Optional[str] = None
     level: int
-    start_pos: int
 
 
 class ContractDocument(Document):

@@ -278,7 +278,6 @@ class ClauseClassifier:
                 clause_type=clause_type,
                 risk_score=adjusted_risk,
                 risk_summary=risk_summary,
-                start_pos=clause.start_pos,
                 level=clause.level,
                 matched_keywords=metadata.matched_keywords,
                 confidence_score=metadata.confidence_score,
