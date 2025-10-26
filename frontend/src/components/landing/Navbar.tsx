@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Button } from "../ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
@@ -15,9 +16,9 @@ function Navbar() {
           <div className="text-sm text-gray-600 whitespace-nowrap">
             <span className="text-green-600 font-semibold">★ 4.9</span>
             <span className="text-gray-400 mx-2">•</span>
-            <span>Trusted by 500+ companies</span>
+            <span>Trusted by multiple companies</span>
           </div>
-          <Button className="font-bold text-black">Get Started</Button>
+          <Button className="font-bold text-black"><Link to="/dashboard">Get Started</Link></Button>
         </div>
 
         {/* Mobile Toggle */}
@@ -37,9 +38,9 @@ function Navbar() {
           <div className="text-sm text-gray-600 text-center pb-4 mb-4 border-b border-gray-200">
             <span className="text-green-600 font-semibold">★ 4.9</span>
             <span className="text-gray-400 mx-2">•</span>
-            <span>Trusted by 500+ companies</span>
+            <span>Trusted by multiple companies</span>
           </div>
-          <Button className="font-bold text-black">Get Started</Button>
+          <Button className="font-bold text-black"><Link to="/dashboard">Get Started</Link></Button>
         </div>
       )}
     </nav>

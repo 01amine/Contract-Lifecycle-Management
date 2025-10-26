@@ -7,12 +7,13 @@ function Hero() {
       <div className="max-w-3xl space-y-12 flex flex-col items-center">
         <div className="space-y-4">
           <h1 className="text-6xl font-extrabold mb-4 text-center">
-            Build <span className="text-primary">Shariah-compliant</span>{" "}
-            financial products
+            AI-Powered <span className="text-primary">Contract Intelligence</span>{" "}
+            Platform
           </h1>
           <p className="text-center text-xl text-[#6B7280]">
-            Create Islamic financial products in minutes, not months. Our
-            AI-powered platform guides you through every step of the process.
+            Automate contract lifecycle management with intelligent AI analysis, 
+            advanced security, and multilingual support — making contracts secure, 
+            auditable, and analyzed in seconds.
           </p>
         </div>
         <div className="flex gap-4">

@@ -1,4 +1,4 @@
-import { Home, type LucideIcon } from "lucide-react";
+import { Brain, Shield, FileSearch, MessageSquare, type LucideIcon } from "lucide-react";
 
 type Feature = {
   title: string;
@@ -9,28 +9,28 @@ type Feature = {
 function Features() {
   const features: Feature[] = [
     {
-      title: "financial products",
+      title: "AI Data Extraction",
       description:
-        "Create Islamic financial products in minutes, not months. Our AI-powered platform guides you through every step of the process.",
-      icon: Home,
+        "Automatically extract parties, key dates, obligations, financials, and jurisdiction from any contract in seconds using advanced AI.",
+      icon: Brain,
     },
     {
-      title: "financial products",
+      title: "Secure Storage",
       description:
-        "Create Islamic financial products in minutes, not months. Our AI-powered platform guides you through every step of the process.",
-      icon: Home,
+        "Store contract hashes and version histories with immutable records, ensuring transparency and proof of authenticity.",
+      icon: Shield,
     },
     {
-      title: "financial products",
+      title: "Risk Analysis",
       description:
-        "Create Islamic financial products in minutes, not months. Our AI-powered platform guides you through every step of the process.",
-      icon: Home,
+        "Identify risky clauses with explainable AI insights. Get visual risk maps highlighting potential issues and compliance gaps.",
+      icon: FileSearch,
     },
     {
-      title: "financial products",
+      title: "Multilingual Support",
       description:
-        "Create Islamic financial products in minutes, not months. Our AI-powered platform guides you through every step of the process.",
-      icon: Home,
+        "Seamlessly work in English and Arabic with AI-powered Q&A, summaries, and clause regeneration in both languages.",
+      icon: MessageSquare,
     },
   ];
 
@@ -51,7 +51,7 @@ function Features() {
                 <feature.icon className="text-white" />
               </div>
               <h1 className="text-2xl font-extrabold">{feature.title}</h1>
-              <p className="text-[10px] text-[#6B7280] text-center max-w-2/3">
+              <p className="text-xs text-[#6B7280] text-center max-w-2/3">
                 {feature.description}
               </p>
             </div>
