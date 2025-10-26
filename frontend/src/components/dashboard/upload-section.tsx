@@ -16,13 +16,13 @@ export function UploadSection() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Link to="/contracts/create" className="block">
+          <Link to="/contracts/create/write" className="block">
             <Button size="lg" className="w-full group" variant="outline">
               Write From Scratch
               <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
-          <Link to="/contracts/create" className="block">
+          <Link to="/contracts/create/upload" className="block">
             <Button size="lg" className="w-full group">
               Upload Document
               <ArrowRight className="size-4 ml-2 group-hover:translate-x-1 transition-transform" />

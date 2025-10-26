@@ -15,6 +15,7 @@ import ContractProcessingComplete from "@/components/upload/contract-processing-
 import ClauseDisplay from "@/components/upload/clauses-display";
 import { Button } from "@/components/ui/button";
 import { contractActions } from "@/actions/contracts";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(app)/contracts/create/upload")({
   component: RouteComponent,
@@ -78,6 +79,7 @@ function RouteComponent() {
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
+      toast.error("Please select at least one file");
       setError("Please select at least one file");
       return;
     }
@@ -144,11 +146,12 @@ function RouteComponent() {
       setProgress(100);
     } catch (err) {
       console.error("Upload error:", err);
-      setError(
+      const errorMessage =
         err instanceof Error
           ? err.message
-          : "An error occurred during upload. Please try again."
-      );
+          : "An error occurred during upload. Please try again.";
+      toast.error(errorMessage);
+      setError(errorMessage);
       setCurrentStep("upload");
       setProgress(0);
     }

@@ -9,6 +9,7 @@ interface ClauseSuggestionsProps {
   onInsertClause: (clause: ClauseSuggestion) => void;
   onAskAI: (query: string) => void;
   isLoading?: boolean;
+  paragraph?: string;
 }
 
 export function ClauseSuggestions({
@@ -16,6 +17,7 @@ export function ClauseSuggestions({
   onInsertClause,
   onAskAI,
   isLoading = false,
+  paragraph,
 }: ClauseSuggestionsProps) {
   const [query, setQuery] = useState("");
 
@@ -36,6 +38,15 @@ export function ClauseSuggestions({
 
       <div className="h-full overflow-y-auto lg:pe-1 rounded-xl">
         <div className="space-y-3 pr-2">
+          {/* Paragraph Response */}
+          {paragraph && (
+            <div className="p-4 border rounded-xl shadow-island bg-card border-primary/20">
+              <p className="text-sm text-foreground leading-relaxed">
+                {paragraph}
+              </p>
+            </div>
+          )}
+
           {isLoading && (
             <div className="p-4 border rounded-xl shadow-island bg-card flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
@@ -50,9 +61,6 @@ export function ClauseSuggestions({
               <h4 className="font-semibold text-sm">{suggestion.title}</h4>
 
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs text-muted-foreground capitalize bg-muted rounded-xs px-1.5 py-0.5">
-                  {suggestion.type}
-                </span>
                 {suggestion.tags.map((tag, index) => (
                   <span
                     key={index}
@@ -74,7 +82,17 @@ export function ClauseSuggestions({
                 className="w-full"
               >
                 <PlusIcon className="size-3 mr-1" />
-                Insert Clause
+                {suggestion.type === "add"
+                  ? "Add Clause"
+                  : suggestion.type === "modify"
+                  ? "Modify Clause"
+                  : suggestion.type === "clarify"
+                  ? "Clarify Clause"
+                  : suggestion.type === "strengthen"
+                  ? "Strengthen Clause"
+                  : suggestion.type === "remove"
+                  ? "Remove Clause"
+                  : "Apply Suggestion"}
               </Button>
             </div>
           ))}

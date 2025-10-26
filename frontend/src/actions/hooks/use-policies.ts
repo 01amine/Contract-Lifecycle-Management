@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { extractErrorMessage } from "../api";
 import {
   policyActions,
   type PolicyCreate,
@@ -43,6 +45,9 @@ export function useCreatePolicy() {
       // Invalidate and refetch policies list
       queryClient.invalidateQueries({ queryKey: policyKeys.lists() });
     },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to create policy");
+    },
   });
 }
 
@@ -58,6 +63,9 @@ export function useUpdatePolicy() {
       queryClient.invalidateQueries({ queryKey: policyKeys.detail(data.id) });
       queryClient.invalidateQueries({ queryKey: policyKeys.lists() });
     },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to update policy");
+    },
   });
 }
 
@@ -70,6 +78,9 @@ export function useDeletePolicy() {
     onSuccess: () => {
       // Invalidate all policy queries
       queryClient.invalidateQueries({ queryKey: policyKeys.all });
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to delete policy");
     },
   });
 }

@@ -13,7 +13,7 @@ import { TemplateDialog } from "@/components/editor/template-dialog";
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 import type { ClauseSuggestion } from "@/lib/mocks";
-import { getTemplateContent, mockClauseSuggestions } from "@/lib/mocks";
+import { getTemplateContent } from "@/lib/mocks";
 import { debounce } from "@/lib/utils";
 import { ClauseList } from "@/components/contracts/clause-list";
 import { OverviewContent } from "@/components/contracts/overview-content";
@@ -21,23 +21,57 @@ import { CopilotAssistant } from "@/components/contracts/copilot-assistant";
 import { VersionHistory } from "@/components/contracts/version-history";
 import { generateVersionHistory } from "@/lib/demo-versioning";
 import type { Clause } from "@/actions/contracts";
+import {
+  suggestionsActions,
+  type ClauseSuggestion as APIClauseSuggestion,
+} from "@/actions/suggestions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
 });
 
-// Mock function to fetch suggestions - replace with actual API call later
+// Convert API suggestion format to UI format
+const convertSuggestionToUI = (
+  apiSuggestion: APIClauseSuggestion,
+  index: number
+): ClauseSuggestion => {
+  return {
+    id: `suggestion-${index}`,
+    title: apiSuggestion.title,
+    type: apiSuggestion.action || "add",
+    content: apiSuggestion.body,
+    tags: apiSuggestion.tags.map((tag) => tag.name),
+  };
+};
+
+// Fetch AI-powered suggestions from the API
 const fetchSuggestions = async (
   content: string,
   query?: string
-): Promise<ClauseSuggestion[]> => {
+): Promise<{ suggestions: ClauseSuggestion[]; paragraph?: string }> => {
   console.log(`Analyzing ${content.length} characters for suggestions...`);
-  console.log(`Query: ${query}`);
+  if (query) {
+    console.log(`Query: ${query}`);
+  }
 
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    const result = await suggestionsActions.generateSuggestions(content, query);
 
-  return [...mockClauseSuggestions].sort(() => Math.random() - 0.5).slice(0, 4);
+    // Convert API format to UI format
+    const suggestions = result.suggestions.map((suggestion, index) =>
+      convertSuggestionToUI(suggestion, index)
+    );
+
+    return {
+      suggestions,
+      paragraph: result.paragraph,
+    };
+  } catch (error) {
+    console.error("Failed to fetch AI suggestions:", error);
+    // Fallback to empty array on error
+    return { suggestions: [] };
+  }
 };
 
 interface DraftMetadata {
@@ -86,6 +120,7 @@ function RouteComponent() {
       fetchSuggestions(content, query),
     onError: (error) => {
       console.error("Failed to fetch suggestions:", error);
+      toast.error("Failed to fetch AI suggestions");
     },
   });
 
@@ -96,11 +131,10 @@ function RouteComponent() {
   const debouncedFetchSuggestions = useMemo(
     () =>
       debounce((content: string, mutate: typeof suggestionsMutation.mutate) => {
-        if (content.trim()) {
-          console.log("Fetching suggestions for content...");
+        if (content.trim() && content.length < 1200) {
           mutate({ content });
         }
-      }, 5000),
+      }, 15000),
     [] // Empty dependency array - function is created only once
   );
 
@@ -155,10 +189,12 @@ function RouteComponent() {
         },
       });
 
+      toast.success("Contract updated successfully");
       // Switch to overview tab after successful save
       setActiveTab("overview");
     } catch (error) {
       console.error("Failed to save changes:", error);
+      // Error toast is already handled by the mutation's onError
     }
   };
 
@@ -235,7 +271,7 @@ function RouteComponent() {
         onTabChange={setActiveTab}
       >
         <TabContent value="overview" activeTab={activeTab}>
-          <OverviewContent contract={contract} />
+          <OverviewContent contract={contract} setActiveTab={setActiveTab} />
         </TabContent>
 
         {/* Clauses Tab */}
@@ -320,10 +356,11 @@ function RouteComponent() {
                   className="max-h-[calc(95vh-8rem)]"
                 >
                   <ClauseSuggestions
-                    suggestions={suggestionsMutation.data || []}
+                    suggestions={suggestionsMutation.data?.suggestions || []}
                     onInsertClause={handleInsertClause}
                     onAskAI={handleAskAI}
                     isLoading={suggestionsMutation.isPending}
+                    paragraph={suggestionsMutation.data?.paragraph}
                   />
                 </motion.div>
               )}

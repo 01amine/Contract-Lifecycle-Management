@@ -10,6 +10,23 @@ export interface ApiError {
   };
 }
 
+// Helper function to extract error message from Error object
+export function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    try {
+      const parsed = JSON.parse(error.message);
+      if (parsed.error?.message) {
+        return parsed.error.message;
+      }
+    } catch {
+      // If parsing fails, return the original message
+      return error.message;
+    }
+    return error.message;
+  }
+  return "An unexpected error occurred";
+}
+
 export const api = {
   baseUrl: API_BASE_URL,
 
