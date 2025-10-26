@@ -17,6 +17,8 @@ import { getTemplateContent, mockClauseSuggestions } from "@/lib/mocks";
 import { debounce } from "@/lib/utils";
 import { ClauseList } from "@/components/contracts/clause-list";
 import { OverviewContent } from "@/components/contracts/overview-content";
+import { CopilotAssistant } from "@/components/contracts/copilot-assistant";
+import type { Clause } from "@/actions/contracts";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
@@ -61,6 +63,10 @@ function RouteComponent() {
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Copilot Assistant State
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [selectedClause, setSelectedClause] = useState<Clause | null>(null);
 
   const { activeTab, setActiveTab } = useTabs({
     tabs: [
@@ -147,6 +153,27 @@ function RouteComponent() {
     }
   };
 
+  const handleRegenerateClause = (clause: Clause) => {
+    setSelectedClause(clause);
+    setIsCopilotOpen(true);
+  };
+
+  const handleClauseUpdate = async (clauseId: string, newContent: string) => {
+    // In a real implementation, this would update the specific clause in the backend
+    console.log(`Updating clause ${clauseId} with new content:`, newContent);
+    
+    // For demo purposes, we'll just close the copilot and show success
+    // In production, you'd want to:
+    // 1. Call an API to update the clause
+    // 2. Re-fetch the contract
+    // 3. Show a success toast
+    
+    setTimeout(() => {
+      setIsCopilotOpen(false);
+      setSelectedClause(null);
+    }, 2000);
+  };
+
   useHeader(contract?.file_name || "Contract Details");
 
   if (isLoading) {
@@ -208,7 +235,10 @@ function RouteComponent() {
               <ListIcon className="size-5 text-primary inline me-2 mb-1" />{" "}
               Extracted Clauses
             </h3>
-            <ClauseList clauses={contract.clauses || []} />
+            <ClauseList 
+              clauses={contract.clauses || []} 
+              onRegenerateClick={handleRegenerateClause}
+            />
           </div>
         </TabContent>
 
@@ -296,6 +326,18 @@ function RouteComponent() {
           textareaRef.current?.focus();
           setIsTemplateDialogOpen(false);
         }}
+      />
+
+      {/* Copilot Assistant */}
+      <CopilotAssistant
+        isOpen={isCopilotOpen}
+        onClose={() => {
+          setIsCopilotOpen(false);
+          setSelectedClause(null);
+        }}
+        onRegenerateClause={handleClauseUpdate}
+        initialClauseId={selectedClause?.clause_id}
+        initialClauseText={selectedClause?.content || selectedClause?.text}
       />
     </div>
   );

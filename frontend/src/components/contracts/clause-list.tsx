@@ -13,9 +13,10 @@ interface Clause {
 
 interface ClauseListProps {
   clauses: Clause[];
+  onRegenerateClick?: (clause: Clause) => void;
 }
 
-export function ClauseList({ clauses }: ClauseListProps) {
+export function ClauseList({ clauses, onRegenerateClick }: ClauseListProps) {
   if (!clauses || clauses.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -35,6 +36,7 @@ export function ClauseList({ clauses }: ClauseListProps) {
           key={clause.clause_id || index}
           clause={clause}
           index={index}
+          onRegenerateClick={onRegenerateClick}
         />
       ))}
     </div>
