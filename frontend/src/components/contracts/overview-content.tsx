@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatDate } from "date-fns";
 import { useState } from "react";
+import { motion } from "motion/react";
 
 interface Clause {
   clause_id: string;
@@ -142,7 +143,12 @@ export function OverviewContent({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Compliance Score Card */}
         {contract.compliance_score !== undefined && (
-          <div className="relative p-6 border rounded-xl shadow-island bg-card">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+            className="relative p-6 border rounded-xl shadow-island bg-card"
+          >
             <div className="flex items-center justify-between mb-3">
               <Shield className="size-8 text-primary" />
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -165,12 +171,17 @@ export function OverviewContent({
                 ? "Good"
                 : "Needs attention"}
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Status Card */}
         {contract.status && (
-          <div className="relative p-6 border rounded-xl shadow-island bg-card">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.07 }}
+            className="relative p-6 border rounded-xl shadow-island bg-card"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <ClipboardList className="size-5 text-primary" />
@@ -186,12 +197,17 @@ export function OverviewContent({
               <Clock className="size-3" />
               <span>Version {contract.version || 1}</span>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Risk Summary Card */}
         {contract.risks && contract.risks.length > 0 && (
-          <div className="relative p-6 border rounded-xl shadow-island bg-card">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.09 }}
+            className="relative p-6 border rounded-xl shadow-island bg-card"
+          >
             <div className="flex items-center justify-between mb-3">
               <ShieldAlert className="size-8 text-primary" />
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -213,12 +229,17 @@ export function OverviewContent({
                 </span>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Clauses Summary Card */}
         {contract.clauses && contract.clauses.length > 0 && (
-          <div className="relative p-6 border rounded-xl shadow-island bg-card">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.11 }}
+            className="relative p-6 border rounded-xl shadow-island bg-card"
+          >
             <div className="flex items-center justify-between mb-3">
               <ListIcon className="size-8 text-primary" />
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -231,7 +252,7 @@ export function OverviewContent({
             <p className="text-xs text-muted-foreground">
               Key clauses identified
             </p>
-          </div>
+          </motion.div>
         )}
       </div>
 
@@ -239,7 +260,12 @@ export function OverviewContent({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Contract Info */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="p-5 border rounded-xl shadow-island h-full bg-card">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.13 }}
+            className="p-5 border rounded-xl shadow-island h-full bg-card"
+          >
             <h3 className="text-sm font-semibold mb-4 flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
               <ClipboardList className="size-4" />
               Contract Details
@@ -286,14 +312,19 @@ export function OverviewContent({
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Right Column - Clauses & Risks */}
         <div className="lg:col-span-2 space-y-6">
           {/* Risk Analysis Section */}
           {contract.risks && contract.risks.length > 0 && (
-            <div className="p-5 border rounded-xl shadow-island bg-card">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: 0.15 }}
+              className="p-5 border rounded-xl shadow-island bg-card"
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
                   <ShieldAlert className="size-4" />
@@ -482,7 +513,7 @@ export function OverviewContent({
                 <div className="text-center pt-2">
                   <button
                     onClick={() => setShowAllRisks(!showAllRisks)}
-                    className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors font-medium"
+                    className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors font-medium font-title"
                   >
                     {showAllRisks
                       ? "Show less"
@@ -490,12 +521,17 @@ export function OverviewContent({
                   </button>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
 
           {/* Clauses Preview */}
           {contract.clauses && contract.clauses.length > 0 && (
-            <div className="p-5 border rounded-xl shadow-island bg-card">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="p-5 border rounded-xl shadow-island bg-card"
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
                   <ListIcon className="size-4" />
@@ -539,7 +575,7 @@ export function OverviewContent({
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

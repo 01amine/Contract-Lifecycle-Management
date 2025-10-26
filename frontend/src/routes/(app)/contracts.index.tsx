@@ -190,7 +190,7 @@ function RouteComponent() {
                         )}
                       </td>
                       <td className="p-4 text-sm font-medium">
-                        v{contract.version}
+                        v{contract.version}.0.0
                       </td>
                     </motion.tr>
                   ))}
