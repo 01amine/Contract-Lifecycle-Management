@@ -17,6 +17,7 @@ import { getStatusColor, getStatusLabel } from "@/lib/contract-status";
 import { Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { getContractVersion } from "@/lib/demo-versioning";
 
 export const Route = createFileRoute("/(app)/contracts/" as any)({
   component: RouteComponent,

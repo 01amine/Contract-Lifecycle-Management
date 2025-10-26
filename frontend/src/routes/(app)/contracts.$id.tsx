@@ -17,6 +17,10 @@ import { getTemplateContent } from "@/lib/mocks";
 import { debounce } from "@/lib/utils";
 import { ClauseList } from "@/components/contracts/clause-list";
 import { OverviewContent } from "@/components/contracts/overview-content";
+import { CopilotAssistant } from "@/components/contracts/copilot-assistant";
+import { VersionHistory } from "@/components/contracts/version-history";
+import { generateVersionHistory } from "@/lib/demo-versioning";
+import type { Clause } from "@/actions/contracts";
 import {
   suggestionsActions,
   type ClauseSuggestion as APIClauseSuggestion,
@@ -96,10 +100,15 @@ function RouteComponent() {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Copilot Assistant State
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [selectedClause, setSelectedClause] = useState<Clause | null>(null);
+
   const { activeTab, setActiveTab } = useTabs({
     tabs: [
       { id: "overview", label: "Overview" },
       { id: "clauses", label: "Clauses" },
+      { id: "versions", label: "Versions" },
       { id: "edit", label: "Edit" },
     ],
     defaultTab: "overview",
@@ -138,6 +147,12 @@ function RouteComponent() {
       });
       setContent(contract.content || "");
     }
+  }, [contract]);
+
+  // Generate version history based on contract data
+  const versionHistory = useMemo(() => {
+    if (!contract) return [];
+    return generateVersionHistory(contract._id, contract.created_at);
   }, [contract]);
 
   // Trigger debounced suggestions when content changes
@@ -181,6 +196,27 @@ function RouteComponent() {
       console.error("Failed to save changes:", error);
       // Error toast is already handled by the mutation's onError
     }
+  };
+
+  const handleRegenerateClause = (clause: Clause) => {
+    setSelectedClause(clause);
+    setIsCopilotOpen(true);
+  };
+
+  const handleClauseUpdate = async (clauseId: string, newContent: string) => {
+    // In a real implementation, this would update the specific clause in the backend
+    console.log(`Updating clause ${clauseId} with new content:`, newContent);
+    
+    // For demo purposes, we'll just close the copilot and show success
+    // In production, you'd want to:
+    // 1. Call an API to update the clause
+    // 2. Re-fetch the contract
+    // 3. Show a success toast
+    
+    setTimeout(() => {
+      setIsCopilotOpen(false);
+      setSelectedClause(null);
+    }, 2000);
   };
 
   useHeader(contract?.file_name || "Contract Details");
@@ -228,6 +264,7 @@ function RouteComponent() {
         tabs={[
           { id: "overview", label: "Overview" },
           { id: "clauses", label: "Clauses" },
+          { id: "versions", label: "Versions" },
           { id: "edit", label: "Edit" },
         ]}
         activeTab={activeTab}
@@ -244,8 +281,16 @@ function RouteComponent() {
               <ListIcon className="size-5 text-primary inline me-2 mb-1" />{" "}
               Extracted Clauses
             </h3>
-            <ClauseList clauses={contract.clauses || []} />
+            <ClauseList 
+              clauses={contract.clauses || []} 
+              onRegenerateClick={handleRegenerateClause}
+            />
           </div>
+        </TabContent>
+
+        {/* Versions Tab */}
+        <TabContent value="versions" activeTab={activeTab}>
+          <VersionHistory versions={versionHistory} />
         </TabContent>
 
         {/* Edit Tab */}
@@ -333,6 +378,18 @@ function RouteComponent() {
           textareaRef.current?.focus();
           setIsTemplateDialogOpen(false);
         }}
+      />
+
+      {/* Copilot Assistant */}
+      <CopilotAssistant
+        isOpen={isCopilotOpen}
+        onClose={() => {
+          setIsCopilotOpen(false);
+          setSelectedClause(null);
+        }}
+        onRegenerateClause={handleClauseUpdate}
+        initialClauseId={selectedClause?.clause_id}
+        initialClauseText={selectedClause?.content || selectedClause?.text}
       />
     </div>
   );

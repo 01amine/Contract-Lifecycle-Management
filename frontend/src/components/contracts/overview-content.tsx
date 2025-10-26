@@ -12,6 +12,7 @@ import {
   ListIcon,
   Circle,
 } from "lucide-react";
+import { getContractVersion } from "@/lib/demo-versioning";
 import { formatDate } from "date-fns";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -55,6 +56,7 @@ interface Risk {
 }
 
 interface Contract {
+  _id?: string;
   file_name?: string;
   category?: string;
   created_at?: string;
