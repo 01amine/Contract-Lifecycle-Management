@@ -40,7 +40,7 @@ class ContractDocument(Document):
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     version: int = 1
     last_updated: datetime = Field(default_factory=datetime.utcnow)
-    risks: Optional[list[Risk]] = None
+    risks: Optional[list[dict]] = None
     compliance_score: Optional[float] = None
     
     class Settings:

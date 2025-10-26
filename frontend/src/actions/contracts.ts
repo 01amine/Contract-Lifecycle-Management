@@ -18,10 +18,93 @@ export interface Clause {
   confidence?: number;
 }
 
-export interface Risk {
-  clause: string;
-  risk: "Low" | "Medium" | "High" | "Critical";
-  reason: string;
+// Compliance Schema Types
+export enum FindingType {
+  POLICY_VIOLATION = "policy_violation",
+  MISSING_CLAUSE = "missing_clause",
+  WEAK_PROVISION = "weak_provision",
+  LEGAL_RISK = "legal_risk",
+  FINANCIAL_RISK = "financial_risk",
+  RED_FLAG = "red_flag",
+}
+
+export enum ComplianceDomain {
+  POLICY_COMPLIANCE = "policy_compliance",
+  FINANCIAL = "financial",
+  LEGAL = "legal",
+  DATA_PRIVACY = "data_privacy",
+  PAYMENT_TERMS = "payment_terms",
+  DISPUTE_RESOLUTION = "dispute_resolution",
+  INDEMNIFICATION = "indemnification",
+  CONFIDENTIALITY = "confidentiality",
+}
+
+export enum Severity {
+  CRITICAL = "critical",
+  HIGH = "high",
+  MEDIUM = "medium",
+  LOW = "low",
+  INFO = "info",
+}
+
+export enum ImpactLevel {
+  SEVERE = "severe",
+  SIGNIFICANT = "significant",
+  MODERATE = "moderate",
+  MINIMAL = "minimal",
+}
+
+export enum AnalysisSource {
+  COMPLIANCE_AGENT = "compliance_agent",
+  TARIFF_AGENT = "tariff_agent",
+  EXTERNAL_REVIEW_AGENT = "external_review_agent",
+  ORCHESTRATOR = "orchestrator",
+}
+
+export interface PolicyReference {
+  policy_name: string;
+  requirement: string;
+  section?: string;
+}
+
+export interface AffectedClause {
+  clause_id: string;
+  heading?: string;
+  excerpt?: string;
+}
+
+export interface RemediationAction {
+  action_type: string;
+  description: string;
+  priority: number;
+}
+
+export interface ComplianceFinding {
+  finding_id: string;
+  finding_type: FindingType;
+  domain: ComplianceDomain;
+  severity: Severity;
+  impact: ImpactLevel;
+  confidence_score: number;
+  title: string;
+  description: string;
+  affected_clauses: AffectedClause[];
+  policy_violations: PolicyReference[];
+  remediation_actions: RemediationAction[];
+  business_consequence?: string;
+  source: AnalysisSource;
+}
+
+export interface ComplianceMetrics {
+  overall_score: number;
+  completeness_score: number;
+  total_findings: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  domains_analyzed: ComplianceDomain[];
+  missing_critical_clauses: string[];
 }
 
 export interface ContractDocument {
@@ -36,8 +119,12 @@ export interface ContractDocument {
   version: number;
   last_updated: string;
   clauses?: Clause[];
-  risks?: Risk[];
+  risks?: ComplianceFinding[];
   compliance_score?: number;
+  findings?: ComplianceFinding[];
+  metrics?: ComplianceMetrics;
+  executive_summary?: string;
+  recommendation?: string;
 }
 
 export interface ContractsListParams {
@@ -188,7 +275,11 @@ export const contractActions = {
   async complianceCheck(id: string): Promise<{
     status: string;
     compliance_score: number;
-    issues: Risk[];
+    findings: ComplianceFinding[];
+    metrics: ComplianceMetrics;
+    executive_summary: string;
+    recommendation: string;
+    required_actions: string[];
   }> {
     return api.post(`/contract/${id}/compliance-check`);
   },

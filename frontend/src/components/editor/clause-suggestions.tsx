@@ -9,6 +9,7 @@ interface ClauseSuggestionsProps {
   onInsertClause: (clause: ClauseSuggestion) => void;
   onAskAI: (query: string) => void;
   isLoading?: boolean;
+  paragraph?: string;
 }
 
 export function ClauseSuggestions({
@@ -16,6 +17,7 @@ export function ClauseSuggestions({
   onInsertClause,
   onAskAI,
   isLoading = false,
+  paragraph,
 }: ClauseSuggestionsProps) {
   const [query, setQuery] = useState("");
 
@@ -36,6 +38,15 @@ export function ClauseSuggestions({
 
       <div className="h-full overflow-y-auto lg:pe-1 rounded-xl">
         <div className="space-y-3 pr-2">
+          {/* Paragraph Response */}
+          {paragraph && (
+            <div className="p-4 border rounded-xl shadow-island bg-card border-primary/20">
+              <p className="text-sm text-foreground leading-relaxed">
+                {paragraph}
+              </p>
+            </div>
+          )}
+
           {isLoading && (
             <div className="p-4 border rounded-xl shadow-island bg-card flex items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />

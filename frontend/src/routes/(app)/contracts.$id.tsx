@@ -21,6 +21,7 @@ import {
   suggestionsActions,
   type ClauseSuggestion as APIClauseSuggestion,
 } from "@/actions/suggestions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(app)/contracts/$id")({
   component: RouteComponent,
@@ -44,40 +45,28 @@ const convertSuggestionToUI = (
 const fetchSuggestions = async (
   content: string,
   query?: string
-): Promise<ClauseSuggestion[]> => {
+): Promise<{ suggestions: ClauseSuggestion[]; paragraph?: string }> => {
   console.log(`Analyzing ${content.length} characters for suggestions...`);
   if (query) {
     console.log(`Query: ${query}`);
   }
 
   try {
-    // Truncate content to avoid sending huge payloads
-    // Keep first 1200 chars (enough for context) + last 800 chars (often has important clauses)
-    const MAX_CONTENT_LENGTH = 2000;
-    let optimizedContent = content;
-
-    if (content.length > MAX_CONTENT_LENGTH) {
-      const firstPart = content.substring(0, 1200);
-      const lastPart = content.substring(content.length - 800);
-      optimizedContent = `${firstPart}\n\n... [content truncated for brevity] ...\n\n${lastPart}`;
-      console.log(
-        `Content truncated from ${content.length} to ${optimizedContent.length} characters`
-      );
-    }
-
-    const result = await suggestionsActions.generateSuggestions(
-      optimizedContent,
-      query
-    );
+    const result = await suggestionsActions.generateSuggestions(content, query);
 
     // Convert API format to UI format
-    return result.suggestions.map((suggestion, index) =>
+    const suggestions = result.suggestions.map((suggestion, index) =>
       convertSuggestionToUI(suggestion, index)
     );
+
+    return {
+      suggestions,
+      paragraph: result.paragraph,
+    };
   } catch (error) {
     console.error("Failed to fetch AI suggestions:", error);
     // Fallback to empty array on error
-    return [];
+    return { suggestions: [] };
   }
 };
 
@@ -122,6 +111,7 @@ function RouteComponent() {
       fetchSuggestions(content, query),
     onError: (error) => {
       console.error("Failed to fetch suggestions:", error);
+      toast.error("Failed to fetch AI suggestions");
     },
   });
 
@@ -132,7 +122,7 @@ function RouteComponent() {
   const debouncedFetchSuggestions = useMemo(
     () =>
       debounce((content: string, mutate: typeof suggestionsMutation.mutate) => {
-        if (content.trim()) {
+        if (content.trim() && content.length < 1200) {
           mutate({ content });
         }
       }, 15000),
@@ -184,10 +174,12 @@ function RouteComponent() {
         },
       });
 
+      toast.success("Contract updated successfully");
       // Switch to overview tab after successful save
       setActiveTab("overview");
     } catch (error) {
       console.error("Failed to save changes:", error);
+      // Error toast is already handled by the mutation's onError
     }
   };
 
@@ -319,10 +311,11 @@ function RouteComponent() {
                   className="max-h-[calc(95vh-8rem)]"
                 >
                   <ClauseSuggestions
-                    suggestions={suggestionsMutation.data || []}
+                    suggestions={suggestionsMutation.data?.suggestions || []}
                     onInsertClause={handleInsertClause}
                     onAskAI={handleAskAI}
                     isLoading={suggestionsMutation.isPending}
+                    paragraph={suggestionsMutation.data?.paragraph}
                   />
                 </motion.div>
               )}

@@ -4,6 +4,8 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { extractErrorMessage } from "../api";
 import {
   contractActions,
   type ContractStatus,
@@ -89,6 +91,9 @@ export function useUploadContract() {
       queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
       queryClient.invalidateQueries({ queryKey: contractKeys.stats() });
     },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to upload contract");
+    },
   });
 }
 
@@ -107,6 +112,11 @@ export function useUpdateContractStatus() {
       queryClient.invalidateQueries({ queryKey: contractKeys.lists() });
       queryClient.invalidateQueries({ queryKey: contractKeys.stats() });
     },
+    onError: (error) => {
+      toast.error(
+        extractErrorMessage(error) || "Failed to update contract status"
+      );
+    },
   });
 }
 
@@ -119,6 +129,9 @@ export function useDeleteContract() {
     onSuccess: () => {
       // Invalidate all contract queries
       queryClient.invalidateQueries({ queryKey: contractKeys.all });
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to delete contract");
     },
   });
 }
@@ -133,6 +146,9 @@ export function useExtractClauses() {
       // Invalidate the specific contract to refetch with clauses
       queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) });
     },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to extract clauses");
+    },
   });
 }
 
@@ -145,6 +161,11 @@ export function useComplianceCheck() {
     onSuccess: (_, id) => {
       // Invalidate the specific contract to refetch with compliance data
       queryClient.invalidateQueries({ queryKey: contractKeys.detail(id) });
+    },
+    onError: (error) => {
+      toast.error(
+        extractErrorMessage(error) || "Failed to run compliance check"
+      );
     },
   });
 }
@@ -186,6 +207,9 @@ export function useUpdateContract() {
           );
         },
       });
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error) || "Failed to update contract");
     },
   });
 }

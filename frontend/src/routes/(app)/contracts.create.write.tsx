@@ -27,6 +27,7 @@ import ContractProcessingComplete from "@/components/upload/contract-processing-
 import ClauseDisplay from "@/components/upload/clauses-display";
 import { useMutation } from "@tanstack/react-query";
 import { debounce } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/(app)/contracts/create/write")({
   component: RouteComponent,
@@ -119,6 +120,7 @@ function RouteComponent() {
       fetchSuggestions(content, query),
     onError: (error) => {
       console.error("Failed to fetch suggestions:", error);
+      toast.error("Failed to fetch AI suggestions");
     },
   });
 
@@ -126,11 +128,15 @@ function RouteComponent() {
   const debouncedFetchSuggestions = useMemo(
     () =>
       debounce((content: string) => {
-        if (content.trim() && currentStep === "draft") {
+        if (
+          content.trim() &&
+          currentStep === "draft" &&
+          content.length < 1200
+        ) {
           console.log("Fetching suggestions for content...");
           suggestionsMutation.mutate({ content });
         }
-      }, 5000),
+      }, 15000),
     [suggestionsMutation, currentStep]
   );
 
@@ -178,6 +184,7 @@ function RouteComponent() {
 
   const handleContinue = async () => {
     if (!content.trim()) {
+      toast.error("Please write some contract content before continuing");
       setError("Please write some contract content before continuing");
       return;
     }
@@ -213,14 +220,14 @@ function RouteComponent() {
       setContractData(uploadedContract);
       setProgress(30);
 
-      // Step 2: Extract clauses
+      // Feature flag: Extract clauses
       setProgress(50);
       const clauses = await contractActions.extractClauses(contractId);
       console.log("Clauses response:", clauses);
       setClausesData(clauses);
       setProgress(100);
 
-      // Wait a bit before moving to compliance
+      // Wait a bit before moving to departures
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Step 3: Compliance Check
@@ -243,11 +250,12 @@ function RouteComponent() {
       setProgress(100);
     } catch (err) {
       console.error("Processing error:", err);
-      setError(
+      const errorMessage =
         err instanceof Error
           ? err.message
-          : "An error occurred during processing. Please try again."
-      );
+          : "An error occurred during processing. Please try again.";
+      toast.error(errorMessage);
+      setError(errorMessage);
       setCurrentStep("draft");
       setProgress(0);
     }

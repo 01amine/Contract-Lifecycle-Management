@@ -14,6 +14,7 @@ export interface ClauseSuggestion {
 
 export interface SuggestionsResponse {
   suggestions: ClauseSuggestion[];
+  paragraph?: string;
 }
 
 export interface SuggestionsRequest {

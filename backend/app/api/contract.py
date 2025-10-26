@@ -12,8 +12,7 @@ from app.services.extractor import DocumentExtractor, document_extraction_worker
 from app.repositories.contract import ContractRepository
 from app.services.agent import agent
 from app.services.segmenter import  extract_clauses
-from app.services.consistency_checker import check_compliance, convert_clauses_for_compliance
-from app.services.compliance_with_prompt import modify_contract_text
+from app.services.compliance_check import check_compliance, convert_clauses_for_compliance
 
 
 router = APIRouter(prefix="/contract", tags=["Contract"])
@@ -105,7 +104,7 @@ async def get_signed_url():
                 <div class="info">
                     <p>Contract ID: {contract_doc.id}</p>
                     <p>File ID: {file_id}</p>
-                    <p><strong>⚠️ URL expires in 20 seconds.</strong></p>
+                    <p><strong>⚠️ URL expires in 20 minutes.</strong></p>
                 </div>
             </div>
         </body>
@@ -218,28 +217,36 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
             collection_name="company_policies"
         )
         
-        risks = [risk.model_dump() for risk in result.risks]
-        compliance_score = result.compliance_score
+        # Serialize findings to dict format
+        findings = [finding.model_dump() for finding in result.findings]
+        compliance_score = result.metrics.overall_score
         
-        if compliance_score >= 0.9:
+        # Determine status based on score and recommendation
+        if result.recommendation == "APPROVE" and compliance_score >= 0.9:
             new_status = ContractStatus.APPROVED
         elif compliance_score >= 0.7:
             new_status = ContractStatus.UNDER_REVIEW
         else:
             new_status = ContractStatus.UNDER_REVIEW
         
+        # Update contract with new schema
         await contract.update({
             "$set": {
-                "risks": risks,
+                "risks": findings,  # Store as findings now
                 "compliance_score": compliance_score,
                 "status": new_status,
             }
         })
         
+        # Return comprehensive result
         return {
             "status": "completed",
+            "findings": findings,
+            "metrics": result.metrics.model_dump(),
             "compliance_score": compliance_score,
-            "issues": risks
+            "executive_summary": result.executive_summary,
+            "recommendation": result.recommendation,
+            "required_actions": result.required_actions
         }
         
     except Exception as e:
@@ -250,21 +257,6 @@ async def compliance_check_endpoint(contract_id: PydanticObjectId):
             status_code=500,
             detail=f"Compliance check failed: {str(e)}"
         )
-        
-
-@router.post("/compliance-check-plus-prompt")
-async def compliance_check_endpoint(
-    content: str = Body(..., description="The full contract text to be modified."),
-    user_prompt: str = Body(..., description="The instruction for the agent to modify the text.")
-): 
-    
-    modified_text = modify_contract_text( 
-        clauses=content,
-        collection_name="company_policies",
-        user_prompt=user_prompt
-    )
-    
-    return modified_text
         
 @router.get("/{contract_id}", response_model=ContractDocument)
 async def get_contract(contract_id: PydanticObjectId):

@@ -21,6 +21,7 @@ class ClauseSuggestion(BaseModel):
 
 class SuggestionsResponse(BaseModel):
     """Response containing multiple suggestions"""
+    paragraph: Optional[str] = Field(None, description="Conversational paragraph response to user query")
     suggestions: List[ClauseSuggestion]
 
 
@@ -61,6 +62,7 @@ def create_suggestions_agent() -> Agent:
             "- Use it to guide your suggestions and answer specific questions",
             "- If the query asks for a specific type of clause, prioritize that",
             "- Provide context and reasoning for why the suggestion is valuable",
+            "- Include a 'paragraph' field with a conversational 2-4 sentence response addressing their query",
             "",
             "For each suggestion:",
             "- title: A concise, action-oriented title showing the SUGGESTION TYPE (Add/Modify/Clarify/Strengthen/Improve/etc.)",
@@ -86,7 +88,8 @@ def create_suggestions_agent() -> Agent:
             '      "body": "Full suggested clause text",',
             '      "relevance_score": 0.85',
             "    }",
-            "  ]",
+            "  ],",
+            '  "paragraph": "Conversational response paragraph (only if user query provided)"',
             "}"
         ],
         stream=False,
@@ -102,7 +105,7 @@ def generate_suggestions(content: str, query: Optional[str] = None) -> Suggestio
         query: Optional user query to guide suggestions
         
     Returns:
-        SuggestionsResponse containing a list of suggestions
+        SuggestionsResponse containing a list of suggestions and optional paragraph response
     """
     agent = create_suggestions_agent()
     
@@ -126,7 +129,8 @@ Contract Content:
 """
     
     if query:
-        prompt += f"\n\nUser Query: {query}\n"
+        prompt += f"\n\nUser Query: \[{query}\]\n"
+        prompt += "Provide a conversational paragraph response (2-4 sentences) that directly addresses the user's query above. Be helpful, professional, and specific to their contract."
     
     prompt += """
 IMPORTANT: Provide variety in your suggestions. Don't just suggest additions. Consider:
@@ -135,6 +139,7 @@ IMPORTANT: Provide variety in your suggestions. Don't just suggest additions. Co
 - Strengthening weak language
 - Specifying vague terms
 - Enhancing incomplete provisions
+- Removing redundant clauses
 
 Provide your suggestions as a JSON object matching the specified format with variety in suggestion types."""
     

@@ -36,9 +36,9 @@ export default function ClauseDisplay({ clauses }: ClauseDisplayProps) {
           ...clauses,
           ...clauses,
           ...clauses,
-        ].map((clause) => (
+        ].map((clause, index) => (
           <div
-            key={clause.clause_id}
+            key={clause.clause_id + index.toString()}
             className="text-left line-clamp-3 text-balance"
           >
             {clause.heading}: {clause.text}
